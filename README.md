@@ -26,11 +26,34 @@ IoT data collection for a two-floor orthodox black tea factory, currently run fu
 - Sensors wired on RS-485 Modbus to 18 industrial ESP32 zone nodes
 - Nodes and bridges send over Wi-Fi (MQTT) to a self-hosted stack: EMQX, TimescaleDB, a Python backend and the dashboard, in Docker Compose (laptop first, then a VPS)
 
+## Quick start (laptop)
+
+Needs Docker with Compose.
+
+```bash
+cd deploy
+cp .env.example .env        # then change the passwords
+docker compose --profile sim up -d --build
+```
+
+- Dashboard: http://localhost:8080 (log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`)
+- API docs: http://localhost:8080/api/docs
+- EMQX: http://localhost:18083 (user `admin`)
+- Grafana (optional): `docker compose --profile grafana up -d`, then http://localhost:3000
+
+Without `--profile sim` the stack waits for real devices. Tests:
+`docker compose run --rm backend pytest -q`. To start from an empty
+database: `docker compose down -v`.
+
 ## Repository
 
 - `docs/ROADMAP.md`: stages and task checklists; start here
 - `docs/ARCHITECTURE.md`: stack, data model, MQTT topics
 - `docs/PROCESS.md`: process, weigh points, formulas
 - `docs/DEVICES.md`: device and sensor register
-- `dashboard/index.html`: plant-mimic dashboard prototype (simulated data)
+- `deploy/`: Docker Compose stack (EMQX, TimescaleDB, backend, Caddy, simulator, Grafana)
+- `db/`: schema, seed data and report views
+- `backend/`: ingest, rule engine and API (FastAPI)
+- `simulator/`: simulated devices for development
+- `dashboard/`: live plant-mimic dashboard (`prototype.html` is the original mock-up)
 - `docs/floor-plans/`: upper and lower floor plans (SVG), original sketches, reference layout

@@ -23,7 +23,11 @@ IoT data collection for a real two-floor orthodox black tea factory in Sri Lanka
 | `docs/ARCHITECTURE.md` | Docker stack, data model, MQTT topic contract, payloads, extensibility |
 | `docs/DEVICES.md` | Every device and sensor ID, counts, Modbus addresses, wiring notes |
 | `docs/ROADMAP.md` | Stages and task checklists; **start here to find the next task** |
-| `dashboard/index.html` | Plant-mimic dashboard prototype (simulated data, single file) |
+| `deploy/` | Docker Compose stack, `.env.example`, Caddy, Grafana, EMQX notes |
+| `db/` | SQL run on first DB start: schema, time-series policies, TF01 seed, report views |
+| `backend/` | FastAPI: `app/ingest`, `app/engine`, `app/api`; tests; API overview and known limits in `backend/README.md` |
+| `simulator/` | Simulated MQTT traffic for all 25 devices (dev only) |
+| `dashboard/` | Live dashboard (plain HTML + ES modules, no build). `prototype.html` is the original simulated mock-up |
 | `docs/floor-plans/upper-floor-plan.svg`, `lower-floor-plan.svg` | **Source of truth for the factory layout.** Positions of troughs, rollers, weigh points, chutes, fermentation, drier. The dashboard mimic must follow these |
 | `docs/floor-plans/*-sketch.jpeg`, `reference-layout.png` | Original hand sketches and a reference layout from another factory |
 
@@ -33,7 +37,7 @@ External references (not in the repo):
   (written before the move away from AWS; its AWS sections are superseded by `docs/ARCHITECTURE.md`)
 - Plain-language guide: https://claude.ai/code/artifact/f6946dd1-5cec-46ff-b8f6-d05f32ccc828
 - Wiring diagrams: https://claude.ai/code/artifact/714747cb-eab3-4c8a-b86b-068dc5d96788
-- Published dashboard prototype: https://claude.ai/artifact/NJVgmLPS9VQH474M5jQQQm
+- Published dashboard prototype (the old simulated version, now `dashboard/prototype.html`): https://claude.ai/artifact/NJVgmLPS9VQH474M5jQQQm
 - Floor-plan design canvas (editable): https://claude.ai/artifact/J8sbscfiDbDhuBfoNX9MH5. The SVGs in `docs/floor-plans/` are exported from it; re-export when it changes
 
 ## Open items

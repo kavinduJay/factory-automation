@@ -90,22 +90,43 @@ Platform tables (generic, reusable for any sensor):
 | `attribute` | entity_id, scope (client/server/shared), key, value (JSON), updated_at | |
 | `alarm` | id, entity_id, type, severity, status, started_at, acked_by, cleared_at, details | |
 | `rule` | id, name, asset/profile scope, condition (JSON), action (JSON), enabled | When-then rules |
-| `audit_log` | ts, user, entity, action, old, new, reason | Every setting change and correction |
+| `audit_log` | ts, user, entity, action, old, new, reason | Every setting change and correction; append-only |
+| `telemetry_latest` | sensor_id, key, ts, value | Latest value per sensor and key, for the live view |
+| `app_user` | username, password_hash (scrypt), role | Dashboard users: owner, manager, operator, admin |
+| `ingest_msg` | msg_id, device_id, topic_kind, ts | Accepted message IDs for de-duplication; pruned after 30 days |
+| `ingest_reject` | received_at, device_id, topic, reason, payload | Messages or readings that failed validation |
+| `event_log` | msg_id, device_id, ts, type, payload | Raw copy of every device event as sent; append-only |
+
+Telemetry is stored per sensor and key; booleans (e.g. `run`) as 0/1. The
+`sensor` table also holds non-measuring peripherals (`measuring = false`):
+the thermocouple module, stack lights, QR scanners, the tablet and printer.
 
 Business tables (tea process):
 
 | Table | Key columns |
 |---|---|
-| `supplier` | id (QR value), name, contact, active |
-| `delivery`, `sack_weighing` | supplier, gross, deductions, net, ts |
-| `area_load` | trough_no, area_no, supplier_id, alloc_kg, maturity, photos, loaded_at |
-| `area_cycle` | trough_no, area_no, loaded_at, unloaded_at |
-| `crate_weighing` | cycle_id, crate_id, net, over_limit, batch_id |
-| `batch` | id, opened_at, Wz, bulk_stage, fermentation_start/end, status |
-| `stage_weighing` | batch_id, stage (1–4), net |
-| `drier_output` | batch_id, net, moisture_pct |
+| `supplier` | id (QR value), name, contact, active, auto_created (unknown QR seen at A) |
+| `delivery` | id, supplier_id, started_at (one supplier visit at A) |
+| `sack_weighing` | delivery, supplier, gross, tare, wet/coarse deductions, net, trough_no, area_no, cycle_id, maturity, photos |
+| `area_cycle` | trough_no, area_no, loaded_at, unloaded_at (one fill and empty of an area) |
+| `crate_weighing` | cycle_id, trough_no, area_no, crate_id, net, max_limit_kg, batch_id |
+| `batch` | id, opened_at, bulk_stage, fermentation_start/end, status (Wz is computed) |
+| `stage_weighing` | batch_id, stage (1–4), net, bulk |
+| `drier_output` | batch_id, batch_assigned (device, time_window, operator), net, moisture_pct |
 
-Reports (moisture loss, dhool, out-turn, supplier attribution) are SQL views over these, per the formulas in `docs/PROCESS.md`.
+**Weighings are append-only.** Triggers refuse UPDATE and DELETE on the four
+weighing tables (and on `event_log`, `audit_log`). A correction is a new row
+with `corrects_id` pointing at the original (never at another correction),
+`voided`, `reason` and `created_by`. The `*_effective` views give the latest
+version of each original with voided ones removed; reports read only those.
+Over-limit crates at B and made tea at D are not recorded as weighings (the
+operator re-weighs); they stay in `event_log` and raise an `over_limit` alarm.
+
+Reports are SQL views, per the formulas in `docs/PROCESS.md` (`db/020_reports.sql`):
+`area_cycle_summary`, `supplier_area` (supplier share of an area, the
+earlier `area_load` idea), `moisture_loss_supplier`, `cycle_batch`,
+`supplier_batch`, `batch_summary` (Wz, W1–W4, dhool, green leaf, made tea,
+out-turn, stage warnings) and `supplier_batch_attribution`.
 
 ## Adding a new sensor type (Phase 2 example)
 
@@ -114,21 +135,39 @@ Reports (moisture loss, dhool, out-turn, supplier attribution) are SQL views ove
 3. The node firmware adds the reading to its `telemetry` payload.
 4. No backend or database schema change. The dashboard shows it through the generic device view; a custom mimic tile is optional.
 
+## Alarms and rules in practice
+
+- Rule condition: `{"sensor_kind","key","op","value","for_s","hysteresis","position"}`.
+  Raises once the condition has held `for_s` seconds of device time; clears
+  when the value is back past the threshold by `hysteresis`. The same format
+  is used in profile `alarm_rules` and the `rule` table.
+- Built-in alarm types besides rules: `offline` (last-will, or no data for the
+  profile's `offline_after_s`), `over_limit` (B, D), `wN_exceeds_previous`
+  (validation rule Wn ≤ W(n−1), on the batch).
+- Settings: shared attributes, validated against the profile's
+  `default_settings` keys and types, audited, published retained on
+  `attributes/desired` and re-published to every device whenever the
+  backend reconnects. The device reports what it uses in its `settings`
+  client attribute; the dashboard shows desired vs reported.
+
 ## Security
 
 - Per-device MQTT credentials, ACL: a device may publish only under its own `tf01/{device_id}/` and subscribe only to its own `attributes/desired` and `rpc/req`.
 - TLS on MQTT and HTTPS on the VPS; plain MQTT 1883 allowed only on the laptop dev network.
-- Dashboard users with roles: owner, manager, operator, admin.
+- Dashboard users with roles: owner, manager, operator, admin. Every role views and acknowledges alarms; owner, manager and admin change settings and rules, correct weighings and edit batches; owner and admin manage users and profiles. Passwords are scrypt-hashed; the API issues HMAC-signed bearer tokens (12 h). The first admin comes from `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
 - Daily `pg_dump` plus volume backups on the VPS.
 
-## Repo layout (target)
+## Repo layout
 
 ```
 deploy/            docker-compose.yml, .env.example, emqx/, caddy/, grafana/
-backend/           FastAPI app: ingest/, api/, engine/, models/, migrations/
-db/                SQL schema, seed data (assets, profiles, devices, sensors)
+backend/           FastAPI app: app/ingest/, app/engine/, app/api/; tests/
+db/                SQL applied on first start: 001 schema, 002 time-series
+                   policies, 010 seed (assets, profiles, devices, sensors),
+                   020 report views
 simulator/         dev data generator for all devices
-dashboard/         plant-mimic UI
+dashboard/         plant-mimic UI: index.html, css/, js/ (ES modules, no
+                   build); prototype.html is the original simulated mock-up
 firmware/
   scale-bridge/    ESP32 Avery bridge (PlatformIO)
   zone-node/       ESP32 Modbus node (PlatformIO)
