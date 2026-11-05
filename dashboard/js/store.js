@@ -67,7 +67,7 @@ export function apply(m) {
       emit('telemetry');
       break;
     case 'event':
-      S.lastEvent[m.device_id] = { event: m.event, result: m.result, ts: m.ts };
+      if (m.event.type !== 'area_unloaded') S.lastEvent[m.device_id] = { event: m.event, result: m.result, ts: m.ts };
       if (['sack_weighed', 'crate_weighed', 'area_unloaded'].includes(m.event.type)) refreshAreas();
       emit('event');
       break;

@@ -113,7 +113,8 @@ async def live(request: Request):
                      for d in st.registry.devices},
         "areas": await _areas(pool),
         "last_events": {r["device_id"]: {"event": r["payload"], "ts": r["ts"]} for r in await pool.fetch(
-            "SELECT DISTINCT ON (device_id) device_id, ts, payload FROM event_log ORDER BY device_id, ts DESC")},
+            "SELECT DISTINCT ON (device_id) device_id, ts, payload FROM event_log WHERE type <> 'area_unloaded' "
+            "ORDER BY device_id, ts DESC")},
     }
 
 
