@@ -1,0 +1,17 @@
+# SITE_ADDRESS is ":80" on the laptop (plain HTTP) and the domain on the VPS,
+# where Caddy fetches and renews the certificate automatically.
+{$SITE_ADDRESS}
+
+encode gzip
+
+# REST and WebSocket
+handle /api/* {
+	reverse_proxy backend:8000
+}
+
+handle {
+	root * /srv/dashboard
+	try_files {path} /index.html
+	file_server
+	header /index.html Cache-Control "no-cache"
+}
