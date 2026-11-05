@@ -13,7 +13,7 @@ services:
     image: emqx/emqx:5.8.3
     restart: unless-stopped
     environment:
-      EMQX_NODE__NAME: emqx@mqtt
+      EMQX_NODE__COOKIE: ${EMQX_COOKIE:-tf01-single-node}
       EMQX_DASHBOARD__DEFAULT_USERNAME: admin
       EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:?set in .env}
       # Laptop dev: no MQTT authentication (stage 5 adds per-device
@@ -105,7 +105,6 @@ services:
       MQTT_PORT: 1883
       SITE_PREFIX: tf01
       SIM_SPEED: ${SIM_SPEED:-60}
-      SIM_TELEMETRY_S: ${SIM_TELEMETRY_S:-10}
       SIM_FAULTS: ${SIM_FAULTS:-1}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
