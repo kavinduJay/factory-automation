@@ -265,6 +265,13 @@ FROM device d
 JOIN device_profile p ON p.id = d.profile_id
 CROSS JOIN LATERAL jsonb_each(p.default_settings) AS s(key, value);
 
+-- Site process timings (server attributes on the site asset). Used to assign
+-- made tea at D to a batch when the bridge does not name one.
+INSERT INTO attribute (entity_id, scope, key, value) VALUES
+    ('TF01', 'server', 'fermentation_minutes', '150'),
+    ('TF01', 'server', 'drying_minutes', '21'),
+    ('TF01', 'server', 'batch_window_minutes', '90');
+
 -- ---------------------------------------------------------------------------
 -- Rules (when-then, editable from the dashboard)
 -- ---------------------------------------------------------------------------
