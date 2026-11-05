@@ -71,7 +71,12 @@ async def pool(db_url):
 async def clean(pool):
     await pool.execute(f"TRUNCATE {', '.join(RESET_TABLES)} RESTART IDENTITY CASCADE")
     await pool.execute("UPDATE device SET online = false, last_seen = NULL, status_changed_at = NULL")
-    await pool.execute("DELETE FROM attribute WHERE scope = 'client'")
+    await pool.execute("DELETE FROM attribute WHERE scope IN ('client', 'shared')")
+    await pool.execute("""
+        INSERT INTO attribute (entity_id, scope, key, value)
+        SELECT d.id, 'shared', s.key, s.value FROM device d
+        JOIN device_profile p ON p.id = d.profile_id
+        CROSS JOIN LATERAL jsonb_each(p.default_settings) AS s(key, value)""")
     yield pool
 
 
