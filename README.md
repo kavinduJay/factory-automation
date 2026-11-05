@@ -24,9 +24,13 @@ IoT data collection for a two-floor orthodox black tea factory, currently run fu
 
 - Avery scales (RS-232) read by custom ESP32 scale bridges: 7 units (A, B, W1–W4, D)
 - Sensors wired on RS-485 Modbus to 18 industrial ESP32 zone nodes
-- Nodes and bridges send over Wi-Fi to AWS IoT Core
+- Nodes and bridges send over Wi-Fi (MQTT) to a self-hosted stack: EMQX, TimescaleDB, a Python backend and the dashboard, in Docker Compose (laptop first, then a VPS)
 
 ## Repository
 
+- `docs/ROADMAP.md`: stages and task checklists; start here
+- `docs/ARCHITECTURE.md`: stack, data model, MQTT topics
+- `docs/PROCESS.md`: process, weigh points, formulas
+- `docs/DEVICES.md`: device and sensor register
 - `dashboard/index.html`: plant-mimic dashboard prototype (simulated data)
 - `docs/floor-plans/`: original floor sketches and the reference layout
