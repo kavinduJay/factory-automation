@@ -112,6 +112,8 @@ async def live(request: Request):
         "settings": {d: {"desired": shared.get(d, {}), "reported": client.get(d, {}).get("settings")}
                      for d in st.registry.devices},
         "areas": await _areas(pool),
+        "last_events": {r["device_id"]: {"event": r["payload"], "ts": r["ts"]} for r in await pool.fetch(
+            "SELECT DISTINCT ON (device_id) device_id, ts, payload FROM event_log ORDER BY device_id, ts DESC")},
     }
 
 

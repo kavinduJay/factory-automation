@@ -196,3 +196,17 @@ async def events(request: Request, device_id: str | None = None, type: str | Non
     return records(await request.app.state.pool.fetch(
         """SELECT * FROM event_log WHERE ($1::text IS NULL OR device_id = $1) AND ($2::text IS NULL OR type = $2)
            ORDER BY ts DESC LIMIT $3""", device_id, type, limit))
+
+
+@router.get("/summary")
+async def summary(request: Request):
+    """Today's totals (factory-local day, Asia/Colombo) for the overview."""
+    row = await request.app.state.pool.fetchrow("""
+        WITH d AS (SELECT date_trunc('day', now() AT TIME ZONE 'Asia/Colombo') AT TIME ZONE 'Asia/Colombo' AS start)
+        SELECT (SELECT count(*) FROM sack_weighing_effective, d WHERE ts >= d.start)                   AS sacks,
+               (SELECT coalesce(sum(net_kg), 0) FROM sack_weighing_effective, d WHERE ts >= d.start)  AS green_leaf_kg,
+               (SELECT count(*) FROM crate_weighing_effective, d WHERE ts >= d.start)                 AS crates,
+               (SELECT coalesce(sum(net_kg), 0) FROM crate_weighing_effective, d WHERE ts >= d.start) AS withered_kg,
+               (SELECT count(*) FROM batch, d WHERE opened_at >= d.start)                             AS batches,
+               (SELECT coalesce(sum(net_kg), 0) FROM drier_output_effective, d WHERE ts >= d.start)   AS made_tea_kg""")
+    return dict(row)

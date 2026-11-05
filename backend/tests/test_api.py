@@ -144,3 +144,16 @@ async def test_users(client):
     assert (await client.get("/api/auth/me", headers=m)).json()["role"] == "manager"
     await client.patch(f"/api/users/{r.json()['id']}", headers=h, json={"active": False})
     assert (await client.get("/api/auth/me", headers=m)).status_code == 401
+
+
+async def test_summary_and_last_events(client):
+    h = await login(client)
+    await client.stack.ingest.handle("tf01/TF01-U-RCV-SCB01/event", json.dumps({
+        "msg_id": "01APITEST0000000000000009", "ts": __import__("datetime").datetime.now(
+            __import__("datetime").timezone.utc).isoformat(), "type": "sack_weighed", "supplier_id": "SUP-9",
+        "gross_kg": 31, "net_kg": 30, "trough_no": 1, "area_no": 1}).encode())
+    s = (await client.get("/api/summary", headers=h)).json()
+    assert s["sacks"] == 1 and s["green_leaf_kg"] == 30
+    live = (await client.get("/api/live", headers=h)).json()
+    assert live["last_events"]["TF01-U-RCV-SCB01"]["event"]["net_kg"] == 30
+    assert live["areas"][0]["suppliers"][0]["supplier_id"] == "SUP-9"
