@@ -7,6 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .alarms import AlarmService
+from .api import alarms as alarms_api, plant, records, users, ws
+from .api.auth import bootstrap_admin
 from .config import settings
 from .db import create_pool
 from .engine.engine import Engine
@@ -37,6 +39,8 @@ async def lifespan(app: FastAPI):
     await engine.load_rules()
     app.state.__dict__.update(pool=pool, registry=registry, hub=hub, alarms=alarms,
                               ingest=ingest, mqtt=mqtt, settings=settings_svc, engine=engine)
+    if await bootstrap_admin(pool, settings.admin_username, settings.admin_password):
+        log.info("created first user %r (role admin)", settings.admin_username)
     tasks = []
     if settings.run_background:
         tasks.append(asyncio.create_task(mqtt.run(), name="mqtt"))
@@ -51,7 +55,9 @@ async def lifespan(app: FastAPI):
         await pool.close()
 
 
-app = FastAPI(title="TF01 backend", lifespan=lifespan)
+app = FastAPI(title="TF01 backend", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+for module in (users, plant, records, alarms_api, ws):
+    app.include_router(module.router)
 
 
 @app.get("/api/health")
