@@ -1,0 +1,19 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git config user.name kavinduJay && git config user.email kavindushashimal@gmail.com && git config commit.gpgsign false && git config --unset user.signingkey 2>/dev/null; true"
+          }
+        ]
+      }
+    ]
+  }
+}
