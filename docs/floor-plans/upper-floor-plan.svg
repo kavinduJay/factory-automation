@@ -1,0 +1,142 @@
+<svg viewBox="0 0 1280 760" width="1280" height="760" xmlns="http://www.w3.org/2000/svg"><style><![CDATA[@import url("https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap");
+
+.t-title{font-family:'Architects Daughter',cursive;font-size:30px;fill:#1d1d1b}
+.t-sub{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:13px;fill:#4a4a46;letter-spacing:.06em}
+.lbl{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12px;font-weight:600;fill:#1d1d1b;letter-spacing:.05em}
+.lbl-s{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:11px;font-weight:600;fill:#1d1d1b;letter-spacing:.04em}
+.txt{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12.5px;fill:#2a2a27}
+.head{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12px;font-weight:700;fill:#1d1d1b;letter-spacing:.14em}
+.mid{text-anchor:middle}
+.chk{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:13px;font-weight:700;fill:#ffffff;text-anchor:middle;dominant-baseline:central}
+.wall{fill:none;stroke:#262624;stroke-width:8}
+.zone{stroke:#5f5f5a;stroke-width:1.5}
+.trough{fill:#b7d6a3;stroke:#3f6b2e;stroke-width:1.5}
+.conn{fill:#a9d6e3;stroke:#2c6b80;stroke-width:1.5}
+.flow-u{fill:none;stroke:#1d5f7a;stroke-width:2.5;stroke-dasharray:7 5;marker-end:url(#u-arr)}
+.panel{fill:#ffffff;stroke:#c9c8c1;stroke-width:1}
+]]></style>
+<defs>
+<pattern id="u-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e3e2da" stroke-width="1"></path>
+</pattern>
+<pattern id="u-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="10" height="10" fill="#e2e1db"></rect>
+<line x1="0" y1="0" x2="0" y2="10" stroke="#6b6b66" stroke-width="2"></line>
+</pattern>
+<pattern id="u-belt" width="12" height="12" patternUnits="userSpaceOnUse">
+<rect width="12" height="12" fill="#a9d6e3"></rect>
+<line x1="0" y1="6" x2="12" y2="6" stroke="#2c6b80" stroke-width="1.5"></line>
+</pattern>
+<marker id="u-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1d5f7a"></path>
+</marker>
+</defs>
+
+<rect x="0" y="0" width="1280" height="760" fill="url(#u-grid)"></rect>
+
+<text x="60" y="72" class="t-title">Upper Floor — Intake &amp; Withering</text>
+<text x="62" y="100" class="t-sub">TEA FACTORY · TRACED FROM SITE SKETCH · NOT TO SCALE</text>
+
+<!-- Unloading outside, ground level -->
+<rect x="830" y="78" width="130" height="66" fill="#ecebe4" class="zone" stroke-dasharray="6 4"></rect>
+<text x="895" y="106" class="lbl mid">UNLOAD</text>
+<text x="895" y="124" class="lbl-s mid">GROUND LEVEL</text>
+<rect x="872" y="144" width="46" height="40" fill="url(#u-belt)" class="zone"></rect>
+
+<!-- Building -->
+<rect x="80" y="180" width="880" height="460" fill="#fbfaf6"></rect>
+
+<!-- Intake bay -->
+<rect x="836" y="184" width="120" height="452" fill="#ecebe4"></rect>
+<line x1="836" y1="184" x2="836" y2="636" stroke="#5f5f5a" stroke-width="2"></line>
+<rect x="852" y="190" width="88" height="170" fill="url(#u-belt)" class="zone"></rect>
+<text x="896" y="266" class="lbl-s mid">CONVEYOR</text>
+<text x="896" y="282" class="lbl-s mid">FROM GROUND</text>
+<rect x="852" y="400" width="88" height="130" fill="url(#u-hatch)" class="zone"></rect>
+<rect x="858" y="452" width="76" height="26" fill="#fbfaf6"></rect>
+<text x="896" y="470" class="lbl-s mid">WEIGHING</text>
+<circle cx="852" cy="400" r="14" fill="#1d5f7a"></circle>
+<text x="852" y="400" class="chk">A</text>
+
+<!-- Troughs 11 to 5 (all troughs same size) -->
+<text x="500" y="205" class="head">WITHERING TROUGHS 11 – 5</text>
+<rect x="500" y="215" width="300" height="40" class="trough"></rect>
+<rect x="500" y="272" width="300" height="40" class="trough"></rect>
+<rect x="500" y="329" width="300" height="40" class="trough"></rect>
+<rect x="500" y="386" width="300" height="40" class="trough"></rect>
+<rect x="500" y="443" width="300" height="40" class="trough"></rect>
+<rect x="500" y="500" width="300" height="40" class="trough"></rect>
+<rect x="500" y="557" width="300" height="40" class="trough"></rect>
+<text x="650" y="240" class="lbl mid">11</text>
+<text x="650" y="297" class="lbl mid">10</text>
+<text x="650" y="354" class="lbl mid">9</text>
+<text x="650" y="411" class="lbl mid">8</text>
+<text x="650" y="468" class="lbl mid">7</text>
+<text x="650" y="525" class="lbl mid">6</text>
+<text x="650" y="582" class="lbl mid">5</text>
+
+<!-- Troughs 4 to 1 -->
+<text x="110" y="205" class="head">TROUGHS 4 – 1</text>
+<rect x="110" y="215" width="300" height="40" class="trough"></rect>
+<rect x="110" y="272" width="300" height="40" class="trough"></rect>
+<rect x="110" y="329" width="300" height="40" class="trough"></rect>
+<rect x="110" y="386" width="300" height="40" class="trough"></rect>
+<text x="260" y="240" class="lbl mid">4</text>
+<text x="260" y="297" class="lbl mid">3</text>
+<text x="260" y="354" class="lbl mid">2</text>
+<text x="260" y="411" class="lbl mid">1</text>
+
+<!-- Weigh B and discharge chutes -->
+<rect x="110" y="452" width="350" height="34" fill="url(#u-hatch)" class="zone"></rect>
+<rect x="222" y="456" width="126" height="26" fill="#fbfaf6"></rect>
+<text x="285" y="474" class="lbl-s mid">WEIGH · WITHERED</text>
+<circle cx="110" cy="452" r="14" fill="#1d5f7a"></circle>
+<text x="110" y="452" class="chk">B</text>
+<rect x="160" y="514" width="26" height="26" class="conn"></rect>
+<path d="M 166 521 L 180 521 L 173 533 z" fill="#2c6b80"></path>
+<rect x="290" y="514" width="26" height="26" class="conn"></rect>
+<path d="M 296 521 L 310 521 L 303 533 z" fill="#2c6b80"></path>
+<rect x="420" y="514" width="26" height="26" class="conn"></rect>
+<path d="M 426 521 L 440 521 L 433 533 z" fill="#2c6b80"></path>
+<text x="160" y="562" class="lbl-s">3 CHUTES ↓ TO CHARGING ROLLERS</text>
+
+<!-- Flow -->
+<path d="M 895 146 L 895 186" class="flow-u"></path>
+<path d="M 896 362 L 896 396" class="flow-u"></path>
+<path d="M 848 465 L 808 465" class="flow-u"></path>
+<path d="M 260 430 L 260 448" class="flow-u"></path>
+<path d="M 173 488 L 173 510" class="flow-u"></path>
+<path d="M 303 488 L 303 510" class="flow-u"></path>
+<path d="M 433 488 L 433 510" class="flow-u"></path>
+
+<!-- Walls -->
+<rect x="80" y="180" width="880" height="460" class="wall"></rect>
+
+<!-- Legend -->
+<rect x="1000" y="180" width="240" height="460" rx="2" class="panel"></rect>
+<text x="1018" y="210" class="head">LEGEND</text>
+<rect x="1018" y="226" width="24" height="16" fill="url(#u-hatch)" class="zone"></rect>
+<text x="1052" y="239" class="txt">Weighing point</text>
+<rect x="1018" y="254" width="24" height="16" class="trough"></rect>
+<text x="1052" y="267" class="txt">Withering trough</text>
+<rect x="1018" y="282" width="24" height="16" class="conn"></rect>
+<text x="1052" y="295" class="txt">Floor connection</text>
+<rect x="1018" y="310" width="24" height="16" fill="#ecebe4" class="zone"></rect>
+<text x="1052" y="323" class="txt">Intake bay</text>
+<circle cx="1030" cy="346" r="10" fill="#1d5f7a"></circle>
+<text x="1052" y="351" class="txt">Automation checkpoint</text>
+<path d="M 1018 374 L 1042 374" class="flow-u"></path>
+<text x="1052" y="379" class="txt">Leaf flow</text>
+
+<text x="1018" y="424" class="head">KEY</text>
+<circle cx="1030" cy="448" r="10" fill="#1d5f7a"></circle>
+<text x="1030" y="448" class="chk" style="font-size: 11px">A</text>
+<text x="1052" y="452" class="txt">Green leaf intake weigh</text>
+<circle cx="1030" cy="476" r="10" fill="#1d5f7a"></circle>
+<text x="1030" y="476" class="chk" style="font-size: 11px">B</text>
+<text x="1052" y="480" class="txt">Withered leaf weigh</text>
+<text x="1018" y="512" class="txt">11 withering troughs</text>
+<text x="1018" y="534" class="txt">3 chutes down to rolling</text>
+<text x="1018" y="556" class="txt">Conveyor from ground unload</text>
+<text x="1018" y="612" class="t-sub">DIMENSIONS: [TBC]</text>
+</svg>

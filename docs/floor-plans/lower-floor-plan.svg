@@ -1,0 +1,194 @@
+<svg viewBox="0 0 1280 760" width="1280" height="760" xmlns="http://www.w3.org/2000/svg"><style><![CDATA[@import url("https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap");
+
+.t-title{font-family:'Architects Daughter',cursive;font-size:30px;fill:#1d1d1b}
+.t-sub{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:13px;fill:#4a4a46;letter-spacing:.06em}
+.lbl{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12px;font-weight:600;fill:#1d1d1b;letter-spacing:.05em}
+.lbl-s{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:11px;font-weight:600;fill:#1d1d1b;letter-spacing:.04em}
+.txt{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12.5px;fill:#2a2a27}
+.head{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:12px;font-weight:700;fill:#1d1d1b;letter-spacing:.14em}
+.mid{text-anchor:middle}
+.chk{font-family:'IBM Plex Sans Condensed',sans-serif;font-size:13px;font-weight:700;fill:#ffffff;text-anchor:middle;dominant-baseline:central}
+.wall{fill:none;stroke:#262624;stroke-width:8}
+.zone{stroke:#5f5f5a;stroke-width:1.5}
+.part{stroke:#5f5f5a;stroke-width:2}
+.roller{fill:#e2b4b0;stroke:#8a4b45;stroke-width:1.5}
+.ring{fill:none;stroke:#8a4b45;stroke-width:1.5}
+.conn{fill:#a9d6e3;stroke:#2c6b80;stroke-width:1.5}
+.flow-l{fill:none;stroke:#1d5f7a;stroke-width:2.5;stroke-dasharray:7 5;marker-end:url(#l-arr)}
+.panel{fill:#ffffff;stroke:#c9c8c1;stroke-width:1}
+]]></style>
+<defs>
+<pattern id="l-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+<path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e3e2da" stroke-width="1"></path>
+</pattern>
+<pattern id="l-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="10" height="10" fill="#e2e1db"></rect>
+<line x1="0" y1="0" x2="0" y2="10" stroke="#6b6b66" stroke-width="2"></line>
+</pattern>
+<pattern id="l-belt" width="12" height="12" patternUnits="userSpaceOnUse">
+<rect width="12" height="12" fill="#a9d6e3"></rect>
+<line x1="6" y1="0" x2="6" y2="12" stroke="#2c6b80" stroke-width="1.5"></line>
+</pattern>
+<marker id="l-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M 0 0 L 10 5 L 0 10 z" fill="#1d5f7a"></path>
+</marker>
+</defs>
+
+<rect x="0" y="0" width="1280" height="760" fill="url(#l-grid)"></rect>
+
+<text x="60" y="72" class="t-title">Lower Floor — Rolling, Fermentation &amp; Drying</text>
+<text x="62" y="100" class="t-sub">TEA FACTORY · TRACED FROM SITE SKETCH · NOT TO SCALE</text>
+
+<!-- Building -->
+<rect x="80" y="180" width="880" height="460" fill="#fbfaf6"></rect>
+
+<!-- Rolling room -->
+<rect x="84" y="184" width="496" height="452" fill="#f6e4e1"></rect>
+<text x="100" y="206" class="head">ROLLING</text>
+
+<!-- Conveyors between stages -->
+<rect x="190" y="534" width="332" height="14" fill="url(#l-belt)" class="zone"></rect>
+<rect x="190" y="436" width="332" height="14" fill="url(#l-belt)" class="zone"></rect>
+<rect x="190" y="338" width="332" height="14" fill="url(#l-belt)" class="zone"></rect>
+<rect x="190" y="240" width="332" height="14" fill="url(#l-belt)" class="zone"></rect>
+
+<!-- Stage weighing -->
+<rect x="526" y="525" width="48" height="32" fill="url(#l-hatch)" class="zone"></rect>
+<rect x="535" y="532" width="30" height="18" fill="#fbfaf6"></rect>
+<text x="550" y="545" class="lbl-s mid">W1</text>
+<rect x="526" y="427" width="48" height="32" fill="url(#l-hatch)" class="zone"></rect>
+<rect x="535" y="434" width="30" height="18" fill="#fbfaf6"></rect>
+<text x="550" y="447" class="lbl-s mid">W2</text>
+<rect x="526" y="329" width="48" height="32" fill="url(#l-hatch)" class="zone"></rect>
+<rect x="535" y="336" width="30" height="18" fill="#fbfaf6"></rect>
+<text x="550" y="349" class="lbl-s mid">W3</text>
+<rect x="526" y="231" width="48" height="32" fill="url(#l-hatch)" class="zone"></rect>
+<rect x="535" y="238" width="30" height="18" fill="#fbfaf6"></rect>
+<text x="550" y="251" class="lbl-s mid">W4</text>
+
+<!-- 4th rolling -->
+<circle cx="220" cy="296" r="30" class="roller"></circle>
+<text x="220" y="300" class="lbl-s mid">R4</text>
+<!-- 3rd rolling -->
+<circle cx="220" cy="394" r="30" class="roller"></circle>
+<circle cx="350" cy="394" r="30" class="roller"></circle>
+<text x="220" y="398" class="lbl-s mid">R3</text>
+<text x="350" y="398" class="lbl-s mid">R3</text>
+<!-- 2nd rolling -->
+<circle cx="220" cy="492" r="30" class="roller"></circle>
+<circle cx="350" cy="492" r="30" class="roller"></circle>
+<circle cx="480" cy="492" r="30" class="roller"></circle>
+<text x="220" y="496" class="lbl-s mid">R2</text>
+<text x="350" y="496" class="lbl-s mid">R2</text>
+<text x="480" y="496" class="lbl-s mid">R2</text>
+<!-- Charging rollers -->
+<circle cx="220" cy="590" r="32" class="roller"></circle>
+<circle cx="350" cy="590" r="32" class="roller"></circle>
+<circle cx="480" cy="590" r="32" class="roller"></circle>
+<circle cx="220" cy="590" r="24" class="ring"></circle>
+<circle cx="350" cy="590" r="24" class="ring"></circle>
+<circle cx="480" cy="590" r="24" class="ring"></circle>
+<text x="220" y="594" class="lbl-s mid">CH</text>
+<text x="350" y="594" class="lbl-s mid">CH</text>
+<text x="480" y="594" class="lbl-s mid">CH</text>
+
+<circle cx="120" cy="590" r="13" fill="#1d5f7a"></circle>
+<text x="120" y="590" class="chk">C</text>
+<circle cx="120" cy="492" r="13" fill="#1d5f7a"></circle>
+<text x="120" y="492" class="chk">D</text>
+<circle cx="120" cy="394" r="13" fill="#1d5f7a"></circle>
+<text x="120" y="394" class="chk">E</text>
+
+<!-- Chutes from upper floor -->
+<rect x="160" y="577" width="26" height="26" class="conn"></rect>
+<path d="M 166 584 L 180 584 L 173 596 z" fill="#2c6b80"></path>
+<rect x="290" y="577" width="26" height="26" class="conn"></rect>
+<path d="M 296 584 L 310 584 L 303 596 z" fill="#2c6b80"></path>
+<rect x="420" y="577" width="26" height="26" class="conn"></rect>
+<path d="M 426 584 L 440 584 L 433 596 z" fill="#2c6b80"></path>
+
+<!-- Fermentation -->
+<rect x="580" y="184" width="170" height="276" fill="#f3c9a0"></rect>
+<text x="665" y="318" class="lbl mid">FERMENTATION</text>
+<text x="665" y="336" class="lbl-s mid">AREA</text>
+
+<!-- Drier chamber behind wall -->
+<rect x="750" y="118" width="206" height="58" fill="#b58565" class="zone" stroke-dasharray="6 4"></rect>
+<text x="853" y="143" class="lbl-s mid">DRIER CHAMBER</text>
+<text x="853" y="159" class="lbl-s mid">(BEHIND WALL)</text>
+
+<!-- Drier -->
+<rect x="750" y="184" width="206" height="122" fill="#c99c7a"></rect>
+<text x="853" y="250" class="lbl mid">DRIER</text>
+
+<!-- Sorting and grading with drier-out weigh -->
+<rect x="750" y="306" width="206" height="184" fill="#efd96b"></rect>
+<rect x="770" y="320" width="80" height="56" fill="url(#l-hatch)" class="zone"></rect>
+<rect x="776" y="335" width="68" height="26" fill="#fbfaf6"></rect>
+<text x="810" y="353" class="lbl-s mid">WEIGH</text>
+<text x="905" y="344" class="lbl-s mid">DRIER OUT</text>
+<text x="905" y="360" class="lbl-s mid">CONTROLLED</text>
+<text x="853" y="432" class="lbl mid">SORTING &amp;</text>
+<text x="853" y="450" class="lbl mid">GRADING</text>
+
+<!-- Ground-level hatched area -->
+<rect x="580" y="490" width="376" height="146" fill="url(#l-hatch)"></rect>
+<rect x="580" y="460" width="100" height="30" fill="url(#l-hatch)"></rect>
+<rect x="678" y="548" width="220" height="30" fill="#fbfaf6"></rect>
+<text x="788" y="568" class="lbl-s mid">GROUND-LEVEL AREA</text>
+
+<!-- Partitions -->
+<line x1="580" y1="184" x2="580" y2="636" class="part"></line>
+<line x1="750" y1="184" x2="750" y2="490" class="part"></line>
+<line x1="750" y1="306" x2="956" y2="306" class="part"></line>
+<line x1="580" y1="490" x2="956" y2="490" class="part"></line>
+
+<!-- Flow -->
+<path d="M 440 541 L 520 541" class="flow-l"></path>
+<path d="M 550 523 L 550 492 L 516 492" class="flow-l"></path>
+<path d="M 440 443 L 520 443" class="flow-l"></path>
+<path d="M 550 425 L 550 394 L 386 394" class="flow-l"></path>
+<path d="M 440 345 L 520 345" class="flow-l"></path>
+<path d="M 550 327 L 550 296 L 256 296" class="flow-l"></path>
+<path d="M 440 247 L 520 247" class="flow-l"></path>
+<path d="M 576 247 L 610 247" class="flow-l"></path>
+<path d="M 700 245 L 790 245" class="flow-l"></path>
+<path d="M 900 280 L 900 318" class="flow-l"></path>
+
+<!-- Walls -->
+<rect x="80" y="180" width="880" height="460" class="wall"></rect>
+
+<!-- Legend -->
+<rect x="1000" y="180" width="240" height="460" rx="2" class="panel"></rect>
+<text x="1018" y="210" class="head">LEGEND</text>
+<rect x="1018" y="226" width="24" height="16" class="roller"></rect>
+<text x="1052" y="239" class="txt">Rolling</text>
+<rect x="1018" y="254" width="24" height="16" fill="#f3c9a0" class="zone"></rect>
+<text x="1052" y="267" class="txt">Fermentation</text>
+<rect x="1018" y="282" width="24" height="16" fill="#c99c7a" class="zone"></rect>
+<text x="1052" y="295" class="txt">Drying</text>
+<rect x="1018" y="310" width="24" height="16" fill="#efd96b" class="zone"></rect>
+<text x="1052" y="323" class="txt">Sorting &amp; grading</text>
+<rect x="1018" y="338" width="24" height="16" fill="url(#l-hatch)" class="zone"></rect>
+<text x="1052" y="351" class="txt">Weigh / ground-level area</text>
+<rect x="1018" y="366" width="24" height="16" class="conn"></rect>
+<text x="1052" y="379" class="txt">Chute from upper floor (×3)</text>
+<rect x="1018" y="394" width="24" height="16" fill="url(#l-belt)" class="zone"></rect>
+<text x="1052" y="407" class="txt">Conveyor belt</text>
+<path d="M 1018 430 L 1042 430" class="flow-l"></path>
+<text x="1052" y="435" class="txt">Leaf flow</text>
+
+<text x="1018" y="470" class="head">KEY</text>
+<circle cx="1030" cy="492" r="10" fill="#1d5f7a"></circle>
+<text x="1030" y="492" class="chk" style="font-size: 11px">C</text>
+<text x="1052" y="496" class="txt">Charging rollers ×3</text>
+<circle cx="1030" cy="516" r="10" fill="#1d5f7a"></circle>
+<text x="1030" y="516" class="chk" style="font-size: 11px">D</text>
+<text x="1052" y="520" class="txt">2nd rolling ×3</text>
+<circle cx="1030" cy="540" r="10" fill="#1d5f7a"></circle>
+<text x="1030" y="540" class="chk" style="font-size: 11px">E</text>
+<text x="1052" y="544" class="txt">3rd rolling ×2 · 4th ×1</text>
+<text x="1018" y="568" class="txt">W1–W4: dhool weigh per stage</text>
+<text x="1018" y="590" class="txt">Drier out · controlled weigh</text>
+<text x="1018" y="624" class="t-sub">DIMENSIONS: [TBC]</text>
+</svg>

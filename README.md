@@ -33,4 +33,4 @@ IoT data collection for a two-floor orthodox black tea factory, currently run fu
 - `docs/PROCESS.md`: process, weigh points, formulas
 - `docs/DEVICES.md`: device and sensor register
 - `dashboard/index.html`: plant-mimic dashboard prototype (simulated data)
-- `docs/floor-plans/`: original floor sketches and the reference layout
+- `docs/floor-plans/`: upper and lower floor plans (SVG), original sketches, reference layout

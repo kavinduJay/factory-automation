@@ -20,7 +20,7 @@ No hardware needed. Gives the whole system running end to end.
 - [ ] Claude: backend API (REST + WebSocket): live state, history, weighings, batches, alarms, settings
 - [ ] Claude: engine: alarm rules from profiles and `rule` table, offline detection, settings push via retained `attributes/desired`
 - [ ] Claude: `simulator/` publishing realistic telemetry and weighing events for all devices
-- [ ] Claude: dashboard switched from built-in simulation to the API and WebSocket
+- [ ] Claude: dashboard switched from built-in simulation to the API and WebSocket; plant mimic redrawn to match `docs/floor-plans/upper-floor-plan.svg` and `lower-floor-plan.svg`
 - [ ] Claude: SQL views for moisture loss, dhool, out-turn, supplier attribution; tests on the worked example in `docs/PROCESS.md`
 - [ ] You: `docker compose up` on the laptop and click through
 
