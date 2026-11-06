@@ -56,4 +56,6 @@ database: `docker compose down -v`.
 - `backend/`: ingest, rule engine and API (FastAPI)
 - `simulator/`: simulated devices for development
 - `dashboard/`: live plant-mimic dashboard (`prototype.html` is the original mock-up)
+- `docs/wiring/`: scale bridge and zone node wiring (tables + PDF diagrams)
+- `dashboard/index.html`: plant-mimic dashboard prototype (simulated data)
 - `docs/floor-plans/`: upper and lower floor plans (SVG), original sketches, reference layout

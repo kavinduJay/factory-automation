@@ -22,6 +22,7 @@ IoT data collection for a real two-floor orthodox black tea factory in Sri Lanka
 | `docs/PROCESS.md` | Process stages, weigh points, formulas, worked example |
 | `docs/ARCHITECTURE.md` | Docker stack, data model, MQTT topic contract, payloads, extensibility |
 | `docs/DEVICES.md` | Every device and sensor ID, counts, Modbus addresses, wiring notes |
+| `docs/wiring/WIRING.md`, `wiring-diagrams.pdf` | Wiring for every scale bridge and zone node variant: connection tables (Markdown) and diagrams (PDF) |
 | `docs/ROADMAP.md` | Stages and task checklists; **start here to find the next task** |
 | `deploy/` | Docker Compose stack, `.env.example`, Caddy, Grafana, EMQX notes |
 | `db/` | SQL run on first DB start: schema, time-series policies, TF01 seed, report views |
@@ -38,6 +39,8 @@ External references (not in the repo):
 - Plain-language guide: https://claude.ai/code/artifact/f6946dd1-5cec-46ff-b8f6-d05f32ccc828
 - Wiring diagrams: https://claude.ai/code/artifact/714747cb-eab3-4c8a-b86b-068dc5d96788
 - Published dashboard prototype (the old simulated version, now `dashboard/prototype.html`): https://claude.ai/artifact/NJVgmLPS9VQH474M5jQQQm
+- Wiring diagrams (editable source of `docs/wiring/`): https://claude.ai/code/artifact/714747cb-eab3-4c8a-b86b-068dc5d96788
+- Published dashboard prototype: https://claude.ai/artifact/NJVgmLPS9VQH474M5jQQQm
 - Floor-plan design canvas (editable): https://claude.ai/artifact/J8sbscfiDbDhuBfoNX9MH5. The SVGs in `docs/floor-plans/` are exported from it; re-export when it changes
 
 ## Open items
