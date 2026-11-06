@@ -14,17 +14,21 @@
 
 No hardware needed. Gives the whole system running end to end.
 
-- [ ] Claude: `deploy/docker-compose.yml` with EMQX, TimescaleDB, backend, dashboard, Caddy, optional Grafana; `.env.example`
-- [ ] Claude: `db/` schema (platform + business tables, hypertable, compression, continuous aggregates) and seed data for TF01 assets, profiles, all 25 devices and 78 sensors
-- [ ] Claude: backend ingest (MQTT → DB, profile validation, de-duplication by `msg_id`)
-- [ ] Claude: backend API (REST + WebSocket): live state, history, weighings, batches, alarms, settings
-- [ ] Claude: engine: alarm rules from profiles and `rule` table, offline detection, settings push via retained `attributes/desired`
-- [ ] Claude: `simulator/` publishing realistic telemetry and weighing events for all devices
-- [ ] Claude: dashboard switched from built-in simulation to the API and WebSocket; plant mimic redrawn to match `docs/floor-plans/upper-floor-plan.svg` and `lower-floor-plan.svg`
-- [ ] Claude: SQL views for moisture loss, dhool, out-turn, supplier attribution; tests on the worked example in `docs/PROCESS.md`
+- [x] Claude: `deploy/docker-compose.yml` with EMQX, TimescaleDB, backend, dashboard, Caddy, optional Grafana; `.env.example`
+- [x] Claude: `db/` schema (platform + business tables, hypertable, compression, continuous aggregates) and seed data for TF01 assets, profiles, all 25 devices and 78 sensors (plus the TCM module and bridge peripherals as non-measuring entries)
+- [x] Claude: backend ingest (MQTT → DB, profile validation, de-duplication by `msg_id`)
+- [x] Claude: backend API (REST + WebSocket): live state, history, weighings, batches, alarms, settings; simple login with roles
+- [x] Claude: engine: alarm rules from profiles and `rule` table, offline detection, settings push via retained `attributes/desired`
+- [x] Claude: `simulator/` publishing realistic telemetry and weighing events for all devices
+- [x] Claude: dashboard switched from built-in simulation to the API and WebSocket; plant mimic redrawn to match `docs/floor-plans/upper-floor-plan.svg` and `lower-floor-plan.svg`
+- [x] Claude: SQL views for moisture loss, dhool, out-turn, supplier attribution; tests on the worked example in `docs/PROCESS.md`
 - [ ] You: `docker compose up` on the laptop and click through
 
 **Done when** the simulator's data shows live on the dashboard, alarms fire and clear, and a setting changed on the dashboard reaches the simulated device.
+
+Checked in a cloud session (2026-11-05) with the full stack and simulator: 25/25 devices online, all 78 sensors reporting; trough, fan and over-limit alarms raised and cleared; killing the simulator raised 25 last-will `offline` alarms that cleared on reconnect; B's `max_limit_kg` changed via the API was applied and reported back by the simulated bridge. Backend tests: 33 passing. Still to do by you: run it on the laptop and click through.
+
+How to run: see `README.md` (Quick start). Known limits: `backend/README.md`.
 
 ## Stage 3: Capture the Avery scale output
 

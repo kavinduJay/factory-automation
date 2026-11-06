@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TF01 Factory Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1418;--bg2:#121A1F;--panel:#162027;--panel2:#1B262E;--line:#26333B;--line2:#34434C;
+  --ink:#DCE5E9;--muted:#8B9BA3;--dim:#5E6E76;
+  --run:#3DBE85;--warn:#E8A93A;--alarm:#F0545A;--off:#6E7C84;--sel:#5CC8E0;
+  --p-roll:#4A3A42;--p-ferm:#3E3529;--p-dry:#3B3128;--p-sort:#2F3A2A;--belt:#1E2B33;--flow:#7FA7B8;--chute:#3F5F6E;
+  --alarm-bg:rgba(240,84,90,.12);--warn-bg:rgba(232,169,58,.12);
+  color-scheme:dark;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.45;min-height:100%}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+.app{display:grid;grid-template-columns:208px 1fr;min-height:100vh}
+nav.side{background:var(--bg2);border-right:1px solid var(--line);padding:18px 10px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto}
+.brand{padding:0 10px 18px}
+.brand b{display:block;font-stretch:70%;font-weight:800;font-size:30px;letter-spacing:.01em;line-height:1}
+.brand span{color:var(--muted);font-size:13px}
+nav.side button{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:6px;cursor:pointer;font-weight:500;color:var(--muted)}
+nav.side button:hover{background:var(--panel);color:var(--ink)}
+nav.side button[aria-current="page"]{background:var(--panel2);color:var(--ink);box-shadow:inset 3px 0 0 var(--sel)}
+.count{font-size:12px;font-weight:700;background:var(--alarm);color:#fff;border-radius:10px;padding:0 7px;min-width:20px;text-align:center}
+main{padding:20px 24px 60px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+h1{font-stretch:72%;font-weight:700;font-size:34px;line-height:1;margin:0;letter-spacing:.005em}
+h2{font-stretch:85%;font-weight:700;font-size:18px;margin:0 0 10px}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.status{display:flex;gap:10px;align-items:center;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px}
+.pill.alarm{border-color:var(--alarm);color:var(--ink);background:var(--alarm-bg)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.kpi .v{font-stretch:68%;font-weight:700;font-size:30px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:13px}
+.kpi.bad{border-color:var(--alarm);background:var(--alarm-bg)}
+.kpi.bad .v{color:var(--alarm)}
+/* overview layout */
+.ov{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.mimic{padding:12px 14px 14px}
+.mimic-head{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:8px}
+.seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:3px}
+.seg button{background:none;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:600;font-size:13.5px}
+.seg button[aria-pressed="true"]{background:var(--panel2);color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);align-items:center}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.ramp{display:inline-block;width:70px;height:9px;border-radius:3px;background:linear-gradient(90deg,#3F7A5A,#7E8F55,#B2A068);vertical-align:middle;margin:0 6px}
+.floors{display:grid;gap:12px}
+.floors.both{grid-template-columns:1fr 1fr}
+@media (max-width:2100px){.floors.both{grid-template-columns:1fr}}
+.floors.upper .fl-lower,.floors.lower .fl-upper{display:none}
+figure.floor{margin:0;background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:8px}
+figure.floor figcaption{font-size:13px;color:var(--muted);padding:2px 4px 6px;font-weight:600}
+svg.mimic-svg{width:100%;height:auto;display:block}
+.side-p{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.alstrip{grid-column:1/-1}
+/* svg classes */
+.wall{fill:var(--bg2);stroke:#4E5F68;stroke-width:4}
+.bay{fill:#151F25;stroke:var(--line)}
+.station{fill:var(--panel2);stroke:var(--line2);stroke-width:1.5}
+.station.out{fill:transparent}
+.beltbox{fill:var(--belt);stroke:var(--line2)}
+.flow{fill:none;stroke:var(--flow);stroke-width:2;stroke-dasharray:6 8;stroke-linecap:round}
+.flow.anim{animation:dash 1.1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.trough-o{fill:transparent;stroke:var(--line);stroke-width:1.2}
+.acell{stroke:var(--bg2);stroke-width:1.5}
+.acell.empty{fill:url(#hatchU)}
+.acell.unl{fill:transparent;stroke:var(--line2);stroke-dasharray:3 3}
+.acell.over{stroke:var(--warn);stroke-width:2.5}
+.fanc{fill:#1A252C;stroke-width:2}
+.fan.run .fanc{stroke:var(--run)} .fan.run .blades{fill:var(--run)}
+.fan.stop .fanc{stroke:var(--alarm)} .fan.stop .blades{fill:var(--alarm)}
+.blades{transform-box:fill-box;transform-origin:center}
+.fan.run .blades{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rc{fill:var(--p-roll);stroke:var(--run);stroke-width:2.2}
+.roller.stop .rc{stroke:var(--alarm)}
+.ring{fill:none;stroke:#8C6F7B;stroke-width:1}
+.spin{transform-box:view-box;animation:spin 2.6s linear infinite}
+.tick{stroke:var(--run);stroke-width:3;stroke-linecap:round}
+.zone-ferm{fill:var(--p-ferm);stroke:var(--line2)}
+.zone-dry{fill:var(--p-dry);stroke:var(--line2)}
+.zone-sort{fill:var(--p-sort);stroke:var(--line2)}
+.zone-roll{fill:#1A1A20;stroke:var(--line)}
+.chute{fill:var(--chute);stroke:var(--flow)}
+.spotc{stroke:var(--bg2);stroke-width:2}
+.m-lbl{fill:var(--muted);font-size:12px}
+.m-val{fill:var(--ink);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.m-big{fill:var(--ink);font-size:17px;font-weight:700}
+.m-zone{fill:var(--ink);font-size:13px;font-weight:700;letter-spacing:.02em}
+[data-sel]{cursor:pointer}
+[data-sel]:hover .hit,.acell:hover{stroke:var(--sel)}
+.is-sel .hit,.acell.is-sel{stroke:var(--sel)!important;stroke-width:3!important}
+.pulse{stroke:var(--alarm)!important;stroke-width:3!important;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{stroke-opacity:.2}}
+@media (prefers-reduced-motion:reduce){.flow.anim,.pulse,.fan.run .blades,.spin,.lamp.on.r{animation:none!important}}
+/* side panel */
+.sp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.sp-head h2{margin:0;font-size:20px}
+.sp-kind{font-size:12.5px;color:var(--muted)}
+.xbtn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--muted)}
+.rd{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:14px;margin:6px 0 12px}
+.rd dt{color:var(--muted)}
+.rd dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.ids{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.ids span{font-size:12px;background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:2px 6px;font-variant-numeric:tabular-nums}
+.ids span.offline{border-color:var(--alarm);color:var(--alarm)}
+.sp-sec{font-size:12.5px;color:var(--muted);margin-top:10px}
+svg.spark{width:100%;height:46px;display:block}
+.al{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:8px;margin-bottom:8px;background:var(--alarm-bg);border-left:3px solid var(--alarm);cursor:pointer;text-align:left;width:100%;border-top:0;border-right:0;border-bottom:0}
+.al.warn{background:var(--warn-bg);border-left-color:var(--warn)}
+.al.off{background:rgba(110,124,132,.12);border-left-color:var(--off)}
+.al b{display:block;font-size:14px}
+.al span{font-size:13px;color:var(--muted)}
+.al-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+.dot.on{background:var(--run)}.dot.off{background:var(--alarm)}.dot.stale{background:var(--warn)}
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12.5px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+/* forms */
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+label.f > *{color:var(--ink)}
+select,input[type=number],input[type=text]{background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:8px 10px;width:100%}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.btn{background:var(--sel);color:#08262E;border:0;border-radius:6px;padding:9px 14px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+/* scale */
+.scale{display:flex;align-items:center;gap:18px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.read{font-stretch:62%;font-weight:700;font-size:58px;line-height:1;font-variant-numeric:tabular-nums;min-width:170px}
+.read small{font-size:20px;font-weight:600;margin-left:4px;color:var(--muted)}
+.state{font-size:13px;color:var(--muted)}
+.tower{display:grid;gap:5px;background:#0B1013;border-radius:8px;padding:6px}
+.lamp{width:22px;height:22px;border-radius:50%;background:#26333B}
+.lamp.on.r{background:var(--alarm);box-shadow:0 0 14px var(--alarm)}
+.lamp.on.a{background:var(--warn);box-shadow:0 0 12px var(--warn)}
+.lamp.on.g{background:var(--run);box-shadow:0 0 12px var(--run)}
+@media (prefers-reduced-motion:no-preference){.lamp.on.r{animation:blink .6s steps(2) infinite}}
+@keyframes blink{50%{opacity:.25}}
+.msg{font-size:14px;margin:8px 0 0}
+.msg.bad{color:var(--alarm);font-weight:600}
+.msg.good{color:var(--run);font-weight:600}
+.log li{padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;list-style:none}
+.log{padding:0;margin:0;max-height:320px;overflow:auto}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stage{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.stage .ws{font-size:13px;color:var(--muted);margin-top:6px;font-variant-numeric:tabular-nums}
+.stage.bad{border-color:var(--warn);box-shadow:inset 0 0 0 1px var(--warn)}
+.bar{height:22px;display:flex;border-radius:4px;overflow:hidden;margin-top:12px}
+.bar span{display:block;height:100%}
+.legend2{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.ferm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.spot{border-radius:8px;padding:12px;text-align:center;border:2px solid transparent}
+.spot.hot{border-color:var(--alarm)}
+.spot .t{font-stretch:66%;font-weight:700;font-size:30px;font-variant-numeric:tabular-nums}
+.spot .i{font-size:12px;color:var(--muted)}
+.gauge{display:grid;grid-template-columns:110px 1fr 90px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.gauge .v{font-stretch:68%;font-weight:700;font-size:28px;text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:8px}
+@media (max-width:1180px){.ov{grid-template-columns:1fr}.side-p{position:static;max-height:none}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  nav.side{position:sticky;top:0;height:auto;display:flex;overflow-x:auto;gap:4px;padding:8px;border-right:0;border-bottom:1px solid var(--line);z-index:5}
+  .brand{display:none}
+  nav.side button{width:auto;white-space:nowrap;gap:6px}
+  nav.side button[aria-current="page"]{box-shadow:inset 0 -3px 0 var(--sel)}
+  main{padding:14px 12px 40px}
+  h1{font-size:28px}
+  .ferm{grid-template-columns:repeat(2,1fr)}
+  .read{font-size:44px;min-width:130px}
+  .side-p{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:62vh;border-radius:14px 14px 0 0;z-index:30;transform:translateY(105%);transition:transform .25s ease;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.5)}
+  .side-p.open{transform:none}
+}
+@media (max-width:860px) and (prefers-reduced-motion:reduce){.side-p{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" id="nav" aria-label="Sections"></nav>
+  <main id="main"></main>
+</div>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const r1=x=>Math.round(x*10)/10;
+const fmt=(x,d=1)=>Number(x).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nn=t=>String(t+1).padStart(2,'0');
+const SIM=60;
+const T0=Date.now(), SIM0=Date.now();
+const simNow=()=>SIM0+(Date.now()-T0)*SIM;
+const H=3600e3;
+
+/* settings */
+const DEF={bMax:25,dMax:30,amberPct:5,crateTare:2.0,witherH:8,ferMaxSurf:30,ferMinRH:90,dryInMin:100,dryInMax:125,
+  dedTare:true,tareKg:0.5,dedWet:false,wetPct:2,dedCoarse:false};
+let set=Object.assign({},DEF);
+try{const s=localStorage.getItem('tf01-settings');if(s)Object.assign(set,JSON.parse(s));}catch(e){}
+function saveSet(){try{localStorage.setItem('tf01-settings',JSON.stringify(set));}catch(e){}}
+
+/* master data */
+const SUP=[["SUP-001","S. Perera"],["SUP-002","N. Fernando"],["SUP-003","K. Bandara"],["SUP-004","R. Silva"],["SUP-005","M. Jayasinghe"],["SUP-006","A. Wickramasinghe"],["SUP-007","D. Rathnayake"],["SUP-008","P. Gunawardena"],["SUP-009","L. Herath"],["SUP-010","T. Dissanayake"],["SUP-011","C. Senanayake"],["SUP-012","H. Abeykoon"]];
+const supName=id=>(SUP.find(s=>s[0]===id)||[id,id])[1];
+const MAT=["Fine","Medium","Coarse"];
+const RID=['RC1','RC2','RC3','R21','R22','R23','R31','R32','R41'];
+const rNode=id=>id.startsWith('RC')?'NOD01':id.startsWith('R2')?'NOD02':'NOD03';
+
+/* state */
+const S={view:'overview',sel:null,floor:'both',areas:[],cycles:[],recv:[],batch:null,batches:[],ferm:[],lastA:null,lastB:null,lastD:null};
+let batchSeq=3;
+function newBatch(){const d=new Date(simNow());return {id:`B-${d.toISOString().slice(0,10).replace(/-/g,'')}-${String(++batchSeq).padStart(2,'0')}`,crates:[],N:0,W:[null,null,null,null],bulk:3,opened:simNow(),D:0};}
+for(let t=0;t<11;t++){S.areas.push([]);for(let a=0;a<8;a++){
+  const r=Math.random();let ar={loads:[],loadedAt:null,state:'empty',bw:0,crates:0};
+  if(r<0.82){ar.loads.push({sup:pick(SUP)[0],kg:r1(rnd(90,160)),mat:pick(MAT)});
+    if(Math.random()<0.08)ar.loads.push({sup:pick(SUP)[0],kg:r1(rnd(20,50)),mat:pick(MAT)});
+    ar.loadedAt=simNow()-rnd(0.3,9.6)*H;ar.state='wither';}
+  S.areas[t].push(ar);}}
+for(let a=0;a<3;a++){const ar=S.areas[0][a];if(ar.state==='wither')ar.state='unloaded';}
+for(let i=0;i<70;i++){const sup=pick(SUP)[0];const N=r1(rnd(80,170));const loss=rnd(0.38,0.52);S.cycles.push({t:Math.floor(rnd(1,12)),a:Math.floor(rnd(1,9)),loads:[{sup,kg:N}],N,bw:r1(N*(1-loss)),at:simNow()-rnd(10,140)*H});}
+S.batch=newBatch();
+for(let a=0;a<3;a++){const ar=S.areas[0][a];if(ar.state!=='unloaded')continue;const N=ar.loads.reduce((s,l)=>s+l.kg,0);let left=N*rnd(.5,.6);
+  while(left>1){const net=r1(Math.min(left,rnd(19,23)));left-=net;ar.bw=r1(ar.bw+net);ar.crates++;S.batch.crates.push({t:1,a:a+1,net,at:simNow()});}
+  S.batch.N+=N;S.cycles.push({t:1,a:a+1,loads:ar.loads.slice(),N,bw:ar.bw,at:simNow()});}
+S.lastB={net:S.batch.crates.length?S.batch.crates[S.batch.crates.length-1].net:0,at:simNow()};
+S.lastA={net:r1(rnd(30,42)),at:simNow()-12*60e3};
+S.lastD={net:r1(rnd(24,28)),at:simNow()-20*60e3};
+S.ferm.push({id:'B-PREV-02',start:simNow()-1.6*H,Wz:412,N:880,D:0});
+S.ferm.push({id:'B-PREV-03',start:simNow()-0.4*H,Wz:398,N:861,D:0});
+S.batches.push({id:'B-PREV-01',N:905,D:198.4,Wz:431});
+
+/* telemetry */
+const tele={amb:{t:27.5,rh:78},trough:[],roller:[],ferRoom:[],ferSurf:[],dry:{in:[],out:[],ex:[]},
+  hist:{gain:Array.from({length:11},()=>[]),rolT:Array.from({length:9},()=>[]),ferMax:[],ferRH:[]}};
+for(let t=0;t<11;t++)tele.trough.push({p:{t:rnd(29,33),rh:rnd(55,68)},n:{t:rnd(27,30),rh:rnd(70,82)},f:{t:rnd(27,30),rh:rnd(72,86)},amp:t===6?0:rnd(8.8,10.4)});
+for(let i=0;i<9;i++)tele.roller.push({t:rnd(28,32),rh:rnd(80,90),amp:rnd(14,22)});
+for(let i=0;i<3;i++)tele.ferRoom.push({t:rnd(25,27),rh:rnd(92,96)});
+for(let i=0;i<8;i++)tele.ferSurf.push(rnd(25,28));
+function drift(v,lo,hi,step){v+=rnd(-step,step);return Math.max(lo,Math.min(hi,v));}
+const push=(a,v,n=40)=>{a.push(v);if(a.length>n)a.shift();};
+const gainOf=x=>(x.n.rh+x.f.rh)/2-x.p.rh;
+function stepTele(){
+  tele.amb.t=drift(tele.amb.t,24,31,.15);tele.amb.rh=drift(tele.amb.rh,65,92,.6);
+  tele.trough.forEach((x,i)=>{x.p.t=drift(x.p.t,27,36,.2);x.p.rh=drift(x.p.rh,48,72,.6);x.n.t=drift(x.n.t,25,33,.2);x.n.rh=drift(x.n.rh,62,90,.7);x.f.t=drift(x.f.t,25,33,.2);x.f.rh=drift(x.f.rh,62,92,.7);if(i!==6)x.amp=drift(x.amp,8.5,10.8,.15);push(tele.hist.gain[i],gainOf(x));});
+  tele.roller.forEach((x,i)=>{x.t=drift(x.t,27,35,.25);x.rh=drift(x.rh,76,94,.6);x.amp=drift(x.amp,10,26,1.2);push(tele.hist.rolT[i],x.t);});
+  tele.ferRoom.forEach((x,i)=>{x.t=drift(x.t,24,29,.1);x.rh=drift(x.rh,i===1?84:88,98,.4);});
+  const age=S.ferm.length?Math.max(...S.ferm.map(f=>(simNow()-f.start)/H)):0;
+  tele.ferSurf=tele.ferSurf.map((v,i)=>drift(v,24,24.5+Math.min(age,2.5)*2.6+(i===5?1.5:0),.35));
+  push(tele.hist.ferMax,Math.max(...tele.ferSurf));push(tele.hist.ferRH,Math.min(...tele.ferRoom.map(x=>x.rh)));
+  const d=tele.dry;const last=k=>d[k][d[k].length-1];
+  push(d.in,drift(last('in')??rnd(108,118),95,130,1.8),60);push(d.out,drift(last('out')??rnd(70,78),60,90,1.2),60);push(d.ex,drift(last('ex')??rnd(48,54),42,62,.9),60);
+}
+for(let i=0;i<60;i++)stepTele();
+
+/* devices */
+const DEV=[];
+[['TF01-U-RCV-SCB01','Scale bridge A, receiving'],['TF01-U-WWB-SCB01','Scale bridge B, withered weigh'],['TF01-L-RW1-SCB01','Scale bridge W1'],['TF01-L-RW2-SCB01','Scale bridge W2'],['TF01-L-RW3-SCB01','Scale bridge W3'],['TF01-L-RW4-SCB01','Scale bridge W4'],['TF01-L-DRO-SCB01','Scale bridge D, drier output']].forEach(([id,d])=>DEV.push({id,d}));
+for(let t=0;t<11;t++)DEV.push({id:`TF01-U-TR${nn(t)}-NOD01`,d:`Trough ${t+1} node (THS01–03, CTS01)`});
+['charging rollers','2nd rolling','3rd and 4th rolling'].forEach((d,i)=>DEV.push({id:`TF01-L-ROL-NOD0${i+1}`,d:`Rolling node, ${d}`}));
+DEV.push({id:'TF01-L-FER-NOD01',d:'Fermentation node (THH01–03, IRS01–04)'});
+DEV.push({id:'TF01-L-FER-NOD02',d:'Fermentation node (IRS05–08)'});
+DEV.push({id:'TF01-L-DRY-NOD01',d:'Drier node (TCM01, CTS01)'});
+DEV.push({id:'TF01-G-ENV-NOD01',d:'Ambient node (THS01)'});
+DEV.forEach(d=>{d.rssi=Math.round(rnd(-72,-48));d.last=Date.now();d.status='on';});
+const envNode=DEV.find(d=>d.id==='TF01-G-ENV-NOD01');envNode.status='off';envNode.last=Date.now()-11*60e3/SIM;
+
+/* scales */
+function mkScale(){return {target:0,value:0,stable:false,cnt:0};}
+const SC={A:mkScale(),B:mkScale(),D:mkScale()};
+function stepScales(){Object.values(SC).forEach(s=>{const diff=s.target-s.value;if(Math.abs(diff)<0.05){s.value=s.target;s.cnt++;}else{s.value+=diff*0.35+rnd(-.25,.25);s.cnt=0;}s.stable=s.cnt>=4;});}
+
+/* derived */
+const areaProg=ar=>ar.loadedAt?(simNow()-ar.loadedAt)/(set.witherH*H):0;
+const areaN=ar=>ar.loads.reduce((s,l)=>s+l.kg,0);
+const lerp=(x,y,t)=>x.map((v,i)=>Math.round(v+(y[i]-v)*t));
+const P0=[63,122,90],P1=[126,143,85],P2=[178,160,104];
+function procColor(p){p=Math.max(0,Math.min(1,p));const c=p<.5?lerp(P0,P1,p*2):lerp(P1,P2,(p-.5)*2);return `rgb(${c.join(',')})`;}
+const HC0=[44,70,80],HC1=[150,96,62];
+function heatColor(v){const p=Math.max(0,Math.min(1,(v-24)/(set.ferMaxSurf-24)));return `rgb(${lerp(HC0,HC1,p).join(',')})`;}
+const batchWz=()=>r1(S.batch.crates.reduce((s,c)=>s+c.net,0));
+function alarms(){
+  const L=[];
+  tele.trough.forEach((x,i)=>{const loaded=S.areas[i].filter(a=>a.state==='wither').length;if(loaded&&x.amp<1)L.push({sev:'alarm',target:'trough:'+i,t:`Trough ${i+1} fan stopped`,d:`TF01-U-TR${nn(i)}-CTS01 reads 0 A with ${loaded} areas loaded.`});});
+  const over=[];S.areas.forEach((tr,t)=>tr.forEach((a,i)=>{if(a.state==='wither'&&areaProg(a)>1.125)over.push(`T${t+1}-A${i+1}`);}));
+  if(over.length)L.push({sev:'warn',target:'withering',t:`Withering time exceeded in ${over.length} area${over.length>1?'s':''}`,d:`Over ${set.witherH+1} h: ${over.slice(0,8).join(', ')}${over.length>8?'…':''}`});
+  const hot=tele.ferSurf.map((v,i)=>[v,i]).filter(([v])=>v>set.ferMaxSurf);
+  if(hot.length)L.push({sev:'alarm',target:'ferm',t:'Fermentation hot spot',d:hot.map(([v,i])=>`IRS0${i+1} ${fmt(v)} °C`).join(', ')+` (limit ${set.ferMaxSurf} °C)`});
+  tele.ferRoom.forEach((x,i)=>{if(x.rh<set.ferMinRH)L.push({sev:'warn',target:'ferm',t:'Fermentation humidity low',d:`TF01-L-FER-THH0${i+1} ${fmt(x.rh)}% RH, minimum ${set.ferMinRH}%`});});
+  const din=tele.dry.in[tele.dry.in.length-1];
+  if(din<set.dryInMin||din>set.dryInMax)L.push({sev:'alarm',target:'drier',t:'Drier inlet out of range',d:`TF01-L-DRY-TCK01 ${fmt(din)} °C, band ${set.dryInMin}–${set.dryInMax} °C`});
+  const seq=[batchWz(),...S.batch.W];
+  for(let i=1;i<5;i++){if(seq[i]!=null&&seq[i-1]!=null&&seq[i]>seq[i-1]){L.push({sev:'warn',target:'weigh:W'+i,t:'Rolling weights inconsistent',d:`W${i} ${fmt(seq[i])} kg is heavier than ${i===1?'Wz':'W'+(i-1)} in ${S.batch.id}`});break;}}
+  if(SC.B.stable&&SC.B.value-set.crateTare>set.bMax)L.push({sev:'alarm',target:'weigh:B',t:'Crate over limit at B',d:`${fmt(SC.B.value-set.crateTare)} kg on the scale, limit ${set.bMax} kg`});
+  DEV.filter(d=>d.status==='off').forEach(d=>L.push({sev:'off',target:d.id.includes('ENV')?'env':'devices',t:'Device offline',d:`${d.id}, no report for ${Math.round((Date.now()-d.last)*SIM/60e3)} min`}));
+  const ord={alarm:0,warn:1,off:2};return L.sort((a,b)=>ord[a.sev]-ord[b.sev]);
+}
+
+/* nav */
+const VIEWS=[['overview','Plant mimic'],['receiving','Receiving (A)'],['withered','Withered weigh (B)'],['rolling','Rolling W1–W4'],['ferment','Fermentation'],['drier','Drier (D)'],['suppliers','Suppliers'],['alarms','Alarms'],['devices','Devices'],['settings','Settings']];
+function renderNav(){const n=alarms().length;
+  $('#nav').innerHTML=`<div class="brand"><b>TF01</b><span>Factory monitor</span></div>`+VIEWS.map(([k,l])=>`<button data-v="${k}" ${S.view===k?'aria-current="page"':''}><span>${l}</span>${k==='alarms'&&n?`<span class="count">${n}</span>`:''}</button>`).join('');}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;go(b.dataset.v);});
+function go(v){S.view=v;S.msg=null;render();window.scrollTo(0,0);}
+const clockTxt=()=>new Date(simNow()).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+function header(title,sub){const L=alarms(),na=L.filter(a=>a.sev==='alarm').length;
+  return `<div class="top"><div><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="status"><span class="pill"><span class="dot on"></span><span id="clock">${clockTxt()}</span></span><span class="pill">Simulated data</span><button class="pill ${na?'alarm':''}" id="hdrAl" style="cursor:pointer">${na?`<span class="dot off"></span>${na} alarm${na>1?'s':''}`:'No alarms'}</button></div></div>`;}
+
+/* ---------- MIMIC ---------- */
+function fanSVG(t,cx,cy){return `<g class="fan" id="fan-${t}" transform="translate(${cx} ${cy})"><circle class="fanc" r="11"/><g class="blades"><path d="M0 -9 Q5 -3 0 0 Q-5 -3 0 -9Z"/><path d="M0 -9 Q5 -3 0 0 Q-5 -3 0 -9Z" transform="rotate(120)"/><path d="M0 -9 Q5 -3 0 0 Q-5 -3 0 -9Z" transform="rotate(240)"/></g></g>`;}
+function troughSVG(t,lx,fx,cx0,vx,y){
+  let s=`<g data-sel="trough:${t}"><rect class="trough-o hit" id="tro-${t}" x="${fx-16}" y="${y-4}" width="${vx+38-(fx-16)}" height="50" rx="6"/><text class="m-val" x="${lx}" y="${y+26}" text-anchor="end">T${t+1}</text>${fanSVG(t,fx,y+21)}`;
+  for(let a=0;a<8;a++)s+=`<rect class="acell" id="ar-${t}-${a}" data-sel="area:${t}:${a}" x="${cx0+a*32+1}" y="${y}" width="30" height="42" rx="3"/>`;
+  s+=`<text class="m-val" id="trv-${t}" x="${vx}" y="${y+18}">–</text><text class="m-lbl" id="tra-${t}" x="${vx}" y="${y+35}">–</text></g>`;return s;}
+function upperSVG(){
+  let h=`<svg viewBox="0 0 900 540" class="mimic-svg" role="img" aria-label="Upper floor: intake, 11 withering troughs, withered weigh B"><defs><pattern id="hatchU" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#141D22"/><line x1="0" y1="0" x2="0" y2="8" stroke="#2A3840" stroke-width="3"/></pattern></defs>`;
+  h+=`<g data-sel="env"><rect class="station hit" id="envbox" x="20" y="8" width="210" height="46" rx="6"/><text class="m-lbl" x="32" y="26">Outside air</text><text class="m-val" id="envv" x="32" y="44">–</text></g>`;
+  h+=`<rect class="station out" x="760" y="6" width="120" height="40" rx="6" stroke-dasharray="5 4"/><text class="m-lbl" x="820" y="31" text-anchor="middle">Ground unload</text>`;
+  h+=`<rect class="beltbox" x="806" y="46" width="28" height="20"/><line class="flow anim" x1="820" y1="48" x2="820" y2="64"/>`;
+  h+=`<rect class="wall" x="20" y="64" width="860" height="456"/><rect class="bay" x="762" y="68" width="114" height="448"/>`;
+  h+=`<rect class="beltbox" x="790" y="74" width="56" height="150" rx="3"/><line class="flow anim" x1="818" y1="220" x2="818" y2="78" style="animation-direction:reverse"/><text class="m-lbl" x="818" y="244" text-anchor="middle">Conveyor up</text>`;
+  h+=`<g data-sel="weigh:A"><rect class="station hit" x="772" y="258" width="96" height="98" rx="6"/><text class="m-big" x="820" y="284" text-anchor="middle">A</text><text class="m-lbl" x="820" y="302" text-anchor="middle">Receiving</text><text class="m-val" id="wA" x="820" y="338" text-anchor="middle">–</text></g>`;
+  h+=`<line class="flow anim" x1="770" y1="308" x2="762" y2="308"/>`;
+  [10,9,8,7,6,5,4].forEach((t,i)=>{h+=troughSVG(t,426,444,460,722,84+i*58);});
+  [3,2,1,0].forEach((t,i)=>{h+=troughSVG(t,40,66,82,344,84+i*58);});
+  h+=`<g data-sel="weigh:B"><rect class="station hit" x="50" y="328" width="330" height="66" rx="6"/><circle id="lampB" cx="80" cy="361" r="11" fill="#26333B"/><text class="m-big" x="102" y="358">B</text><text class="m-lbl" x="120" y="358">Withered weigh</text><text class="m-lbl" x="102" y="380">Last crate</text><text class="m-big" id="wB" x="368" y="360" text-anchor="end">–</text><text class="m-lbl" id="wBmax" x="368" y="380" text-anchor="end">–</text></g>`;
+  [110,220,330].forEach(c=>{h+=`<line class="flow anim" x1="${c}" y1="396" x2="${c}" y2="420"/><rect class="chute" x="${c-12}" y="420" width="24" height="24" rx="3"/><path d="M${c-6} ${427}L${c+6} ${427}L${c} ${437}Z" fill="#CFE3EA"/>`;});
+  h+=`<text class="m-lbl" x="50" y="470">3 chutes down to the charging rollers</text>`;
+  h+=`<text class="m-zone" x="460" y="510">Withering troughs 11 to 5</text><text class="m-zone" x="82" y="510">Troughs 4 to 1</text>`;
+  return h+`</svg>`;}
+function rollerSVG(id,x,y,charge){return `<g data-sel="roller:${id}" class="roller" id="rol-${id}"><circle class="rc hit" cx="${x}" cy="${y}" r="28"/>${charge?`<circle class="ring" cx="${x}" cy="${y}" r="22"/>`:''}<g class="spin" style="transform-origin:${x}px ${y}px"><line class="tick" x1="${x}" y1="${y-27}" x2="${x}" y2="${y-21}"/></g><text class="m-lbl" x="${x}" y="${y-4}" text-anchor="middle">${id}</text><text class="m-val" id="rolT-${id}" x="${x}" y="${y+13}" text-anchor="middle">–</text></g>`;}
+function wbox(n,y){return `<g data-sel="weigh:W${n}"><rect class="station hit" x="402" y="${y-15}" width="64" height="30" rx="4"/><text class="m-lbl" x="410" y="${y+4}">W${n}</text><text class="m-val" id="wW${n}" x="460" y="${y+5}" text-anchor="end">–</text></g>`;}
+function belt(x1,x2,y){return `<rect class="beltbox" x="${x1}" y="${y-6}" width="${x2-x1}" height="12" rx="2"/><line class="flow anim" x1="${x1+4}" y1="${y}" x2="${x2-4}" y2="${y}"/>`;}
+function lowerSVG(){
+  let h=`<svg viewBox="0 0 900 540" class="mimic-svg" role="img" aria-label="Lower floor: rolling, fermentation, drier, drier output weigh D"><defs><pattern id="hatchL" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#141D22"/><line x1="0" y1="0" x2="0" y2="8" stroke="#2A3840" stroke-width="3"/></pattern></defs>`;
+  h+=`<rect class="station out" x="670" y="8" width="206" height="44" rx="6" stroke-dasharray="5 4"/><text class="m-lbl" x="773" y="35" text-anchor="middle">Stove chamber, behind wall</text>`;
+  h+=`<rect class="wall" x="20" y="64" width="860" height="456"/>`;
+  h+=`<rect class="zone-roll" x="24" y="68" width="446" height="448"/><text class="m-zone" x="36" y="90">Rolling</text>`;
+  h+=belt(70,400,403)+belt(70,400,287)+belt(70,400,176)+belt(150,400,124);
+  h+=wbox(1,403)+wbox(2,287)+wbox(3,176)+wbox(4,124);
+  [['RC1',110],['RC2',220],['RC3',330]].forEach(([id,x])=>{h+=`<rect class="chute" x="${x-7}" y="415" width="14" height="13" rx="2"/>`;h+=rollerSVG(id,x,462,true);});
+  [['R21',110],['R22',220],['R23',330]].forEach(([id,x])=>{h+=rollerSVG(id,x,345,false);});
+  [['R31',110],['R32',220]].forEach(([id,x])=>{h+=rollerSVG(id,x,229,false);});
+  h+=rollerSVG('R41',110,124,false);
+  h+=`<line class="flow anim" x1="468" y1="124" x2="490" y2="124"/>`;
+  h+=`<g data-sel="ferm"><rect class="zone-ferm hit" id="fermbox" x="490" y="68" width="160" height="332"/><text class="m-zone" x="502" y="90">Fermentation</text><text class="m-val" id="frm" x="502" y="108">–</text>`;
+  for(let r=0;r<4;r++)for(let c=0;c<2;c++){const i=r*2+c,x=506+c*68,y=118+r*68;h+=`<rect class="spotc" id="fs-${i}" x="${x}" y="${y}" width="62" height="62" rx="6"/><text class="m-lbl" x="${x+6}" y="${y+16}">${i+1}</text><text class="m-val" id="fsT-${i}" x="${x+31}" y="${y+42}" text-anchor="middle">–</text>`;}
+  h+=`</g><line class="flow anim" x1="650" y1="140" x2="670" y2="140"/>`;
+  h+=`<line class="flow anim" x1="700" y1="52" x2="700" y2="68" stroke="#C27B52"/>`;
+  h+=`<g data-sel="drier"><rect class="zone-dry hit" id="drierbox" x="670" y="68" width="206" height="152"/><text class="m-zone" x="684" y="90">Drier</text><text class="m-lbl" x="684" y="116">Inlet</text><text class="m-val" id="dIn" x="862" y="116" text-anchor="end">–</text><text class="m-lbl" x="684" y="144">Outlet</text><text class="m-val" id="dOut" x="862" y="144" text-anchor="end">–</text><text class="m-lbl" x="684" y="172">Exhaust</text><text class="m-val" id="dEx" x="862" y="172" text-anchor="end">–</text><text class="m-lbl" x="684" y="204">about 21 min</text></g>`;
+  h+=`<rect class="zone-sort" x="670" y="224" width="206" height="176"/><text class="m-zone" x="684" y="390">Sorting and grading</text>`;
+  h+=`<line class="flow anim" x1="773" y1="220" x2="773" y2="250"/>`;
+  h+=`<g data-sel="weigh:D"><rect class="station hit" x="684" y="252" width="178" height="66" rx="6"/><circle id="lampD" cx="710" cy="285" r="11" fill="#26333B"/><text class="m-big" x="730" y="281">D</text><text class="m-lbl" x="748" y="281">Drier out</text><text class="m-big" id="wD" x="852" y="305" text-anchor="end">–</text><text class="m-lbl" x="730" y="305">Last</text></g>`;
+  h+=`<rect x="490" y="404" width="386" height="112" fill="url(#hatchL)" stroke="#26333B"/><text class="m-lbl" x="683" y="465" text-anchor="middle">Ground-level area</text>`;
+  return h+`</svg>`;}
+
+function lampColor(k){const s=SC[k],max=k==='B'?set.bMax:set.dMax,tare=k==='B'?set.crateTare:0.8;const net=s.value-tare;
+  if(s.target>0&&s.stable&&net>0){if(net>max)return 'var(--alarm)';if(net>max*(1-set.amberPct/100))return 'var(--warn)';return 'var(--run)';}
+  const last=k==='B'?S.lastB:S.lastD;if(!last)return '#26333B';if(last.net>max*(1-set.amberPct/100))return 'var(--warn)';return 'var(--run)';}
+function updMimic(){
+  if(!$('#envv'))return;
+  const L=alarms();const targets=new Set(L.filter(a=>a.sev!=='off'||a.target==='env').map(a=>a.target));
+  $('#envv').textContent=envNode.status==='off'?'Offline, last '+fmt(tele.amb.t)+' °C':`${fmt(tele.amb.t)} °C  ${fmt(tele.amb.rh,0)}% RH`;
+  $('#envbox').classList.toggle('pulse',targets.has('env'));
+  S.areas.forEach((tr,t)=>{tr.forEach((a,i)=>{const el=$(`#ar-${t}-${i}`);if(!el)return;
+      el.classList.remove('empty','unl','over');el.removeAttribute('fill');el.style.fill='';
+      if(a.state==='empty')el.classList.add('empty');else if(a.state==='unloaded')el.classList.add('unl');
+      else{const p=areaProg(a);el.style.fill=procColor(p);if(p>1.125)el.classList.add('over');}
+      el.innerHTML=`<title>T${t+1} area ${i+1}: ${a.state==='wither'?a.loads.map(l=>l.sup).join(' + ')+', '+fmt((simNow()-a.loadedAt)/H)+' h':a.state}</title>`;});
+    const x=tele.trough[t],run=x.amp>=1;const f=$(`#fan-${t}`);f.classList.toggle('run',run);f.classList.toggle('stop',!run);
+    $(`#trv-${t}`).textContent=`+${fmt(gainOf(x),0)}%`;$(`#tra-${t}`).textContent=run?`${fmt(x.amp)} A`:'Fan off';
+    $(`#tra-${t}`).style.fill=run?'':'var(--alarm)';
+    $(`#tro-${t}`).classList.toggle('pulse',targets.has('trough:'+t));});
+  $('#wA').textContent=S.lastA?`${fmt(S.lastA.net)} kg`:'–';
+  $('#wB').textContent=S.lastB?`${fmt(S.lastB.net)} kg`:'–';$('#wBmax').textContent=`max ${set.bMax} kg`;$('#lampB').setAttribute('fill',lampColor('B'));
+  for(let n=1;n<=4;n++){const v=S.batch.W[n-1];const e=$('#wW'+n);e.textContent=v==null?'–':fmt(v,0);e.style.fill=targets.has('weigh:W'+n)?'var(--warn)':'';}
+  RID.forEach((id,i)=>{const x=tele.roller[i];$(`#rolT-${id}`).textContent=`${fmt(x.t)}°`;$(`#rol-${id}`).classList.toggle('stop',x.amp<1);});
+  $('#frm').textContent=`${fmt(tele.ferRoom.reduce((s,x)=>s+x.t,0)/3)} °C  ${fmt(Math.min(...tele.ferRoom.map(x=>x.rh)),0)}% RH`;
+  $('#frm').style.fill=tele.ferRoom.some(x=>x.rh<set.ferMinRH)?'var(--warn)':'';
+  tele.ferSurf.forEach((v,i)=>{const e=$(`#fs-${i}`);e.style.fill=heatColor(v);e.classList.toggle('pulse',v>set.ferMaxSurf);$(`#fsT-${i}`).textContent=`${fmt(v)}°`;});
+  const d=tele.dry,last=a=>a[a.length-1];$('#dIn').textContent=`${fmt(last(d.in))} °C`;$('#dOut').textContent=`${fmt(last(d.out))} °C`;$('#dEx').textContent=`${fmt(last(d.ex))} °C`;
+  $('#dIn').style.fill=targets.has('drier')?'var(--alarm)':'';$('#drierbox').classList.toggle('pulse',targets.has('drier'));
+  $('#wD').textContent=S.lastD?`${fmt(S.lastD.net)} kg`:'–';$('#lampD').setAttribute('fill',lampColor('D'));
+  markSel();
+}
+function selKey(){return S.sel;}
+function markSel(){$$('.is-sel').forEach(e=>e.classList.remove('is-sel'));if(!S.sel)return;$$(`[data-sel="${S.sel}"]`).forEach(e=>e.classList.add('is-sel'));}
+
+/* side panel */
+function spark(arr,col){const v=arr.filter(x=>x!=null);if(v.length<2)return '';const mn=Math.min(...v),mx=Math.max(...v),rg=(mx-mn)||1;const pts=v.map((x,i)=>`${(i/(v.length-1)*100).toFixed(1)},${(40-(x-mn)/rg*34).toFixed(1)}`).join(' ');return `<svg class="spark" viewBox="0 0 100 44" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;}
+const rd=rows=>`<dl class="rd">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+const ids=list=>`<div class="ids">${list.map(i=>{const dv=DEV.find(d=>d.id===i);return `<span class="${dv&&dv.status==='off'?'offline':''}">${i}</span>`;}).join('')}</div>`;
+function alarmsFor(keys){const L=alarms().filter(a=>keys.includes(a.target));return L.length?`<div class="sp-sec">Alarms</div>`+L.map(alHTML).join(''):`<div class="sp-sec">No alarms here.</div>`;}
+const alHTML=a=>`<button class="al ${a.sev==='warn'?'warn':a.sev==='off'?'off':''}" data-sel-go="${a.target}"><div><b>${a.t}</b><span>${a.d}</span></div></button>`;
+function spHead(title,kind){return `<div class="sp-head"><div><div class="sp-kind">${kind}</div><h2>${title}</h2></div><button class="xbtn" data-close aria-label="Close details">Close</button></div>`;}
+function sideHTML(){
+  const s=S.sel;
+  if(!s){const fans=tele.trough.filter(x=>x.amp>=1).length,on=DEV.filter(d=>d.status==='on').length;
+    return `<div class="sp-head"><div><div class="sp-kind">Plant status</div><h2>Select anything on the plan</h2></div></div><p class="note">Click a trough, an area, a roller, a weigh point, the fermentation floor or the drier to see its readings, trend, device IDs and alarms.</p>`+rd([['Trough fans running',`${fans} of 11`],['Rollers running','9 of 9'],['Batches fermenting',S.ferm.length],['Open batch Wz',`${fmt(batchWz())} kg`],['Devices online',`${on} of ${DEV.length}`]]);}
+  const [type,a1,a2]=s.split(':');
+  if(type==='trough'){const t=+a1,x=tele.trough[t],tr=S.areas[t];const z=`TF01-U-TR${nn(t)}`;
+    const loaded=tr.filter(a=>a.state==='wither').length,ready=tr.filter(a=>a.state==='wither'&&areaProg(a)>=1).length;
+    return spHead(`Trough ${t+1}`,'Withering trough')+rd([['Plenum air',`${fmt(x.p.t)} °C, ${fmt(x.p.rh)}%`],['Above leaf, near end',`${fmt(x.n.t)} °C, ${fmt(x.n.rh)}%`],['Above leaf, far end',`${fmt(x.f.t)} °C, ${fmt(x.f.rh)}%`],['Humidity gain',`+${fmt(gainOf(x))}%`],['Fan',x.amp>=1?`Running, ${fmt(x.amp)} A`:'<span style="color:var(--alarm)">Stopped</span>'],['Areas loaded',`${loaded} of 8, ${ready} ready`]])
+      +`<div class="sp-sec">Humidity gain, last 2 hours</div>`+spark(tele.hist.gain[t],'#5CC8E0')
+      +`<div class="sp-sec">Devices</div>`+ids([`${z}-THS01`,`${z}-THS02`,`${z}-THS03`,`${z}-CTS01`,`${z}-NOD01`])+alarmsFor(['trough:'+t,'withering'])
+      +`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="withered">Open withered weigh</button></div>`;}
+  if(type==='area'){const t=+a1,i=+a2,a=S.areas[t][i],z=`TF01-U-TR${nn(t)}`;let body;
+    if(a.state==='empty')body=`<p class="note">Empty. Load it from the receiving screen.</p>`;
+    else{const N=areaN(a);body=rd([['State',a.state==='unloaded'?'Unloaded':areaProg(a)>=1?'Ready to unload':'Withering'],['Net received',`${fmt(N)} kg`],...(a.state==='wither'?[['Time on trough',`${fmt((simNow()-a.loadedAt)/H)} of ${set.witherH} h`]]:[['Withered weight',`${fmt(a.bw)} kg in ${a.crates} crates`],['Moisture loss',`${fmt((N-a.bw)/N*100)}%`]])])
+      +`<div class="tbl-wrap"><table><tr><th>Supplier</th><th class="n">Net kg</th><th>Maturity</th></tr>${a.loads.map(l=>`<tr><td>${l.sup} ${esc(supName(l.sup))}</td><td class="n">${fmt(l.kg)}</td><td>${l.mat||'–'}</td></tr>`).join('')}</table></div>`;}
+    return spHead(`Trough ${t+1}, area ${i+1}`,'Trough area')+body+`<div class="sp-sec">Trough sensors</div>`+ids([`${z}-THS01`,`${z}-THS02`,`${z}-THS03`])+alarmsFor(['trough:'+t])
+      +`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="receiving">Open receiving</button><button class="btn ghost" data-sel-go="trough:${t}">Whole trough</button></div>`;}
+  if(type==='roller'){const id=a1,i=RID.indexOf(id),x=tele.roller[i];const stage=id.startsWith('RC')?'Charging roller':id.startsWith('R2')?'2nd rolling':id.startsWith('R3')?'3rd rolling':'4th rolling';
+    return spHead(`Roller ${id}`,stage)+rd([['Air temperature',`${fmt(x.t)} °C`],['Humidity',`${fmt(x.rh)}%`],['Motor',x.amp>=1?`Running, ${fmt(x.amp)} A`:'Stopped']])
+      +`<div class="sp-sec">Temperature, last 2 hours</div>`+spark(tele.hist.rolT[i],'#C9A0B4')+`<div class="sp-sec">Devices</div>`+ids([`TF01-L-${id}-THS01`,`TF01-L-${id}-CTS01`,`TF01-L-ROL-${rNode(id)}`])+alarmsFor(['roller:'+id])
+      +`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="rolling">Open rolling</button></div>`;}
+  if(type==='weigh'){const k=a1;
+    if(k==='A')return spHead('Weigh point A','Receiving')+rd([['Last sack, net',S.lastA?`${fmt(S.lastA.net)} kg`:'–'],['Sacks this session',S.recv.length]])+`<div class="sp-sec">Devices</div>`+ids(['TF01-U-RCV-SCB01','TF01-U-RCV-TAB01','TF01-U-RCV-QRS01'])+alarmsFor(['weigh:A'])+`<div class="btns" style="margin-top:12px"><button class="btn" data-go="receiving">Open receiving</button></div>`;
+    if(k==='B')return spHead('Weigh point B','Withered weigh')+rd([['Last crate, net',S.lastB?`${fmt(S.lastB.net)} kg`:'–'],['Limit',`${set.bMax} kg`],['Open batch',S.batch.id],['Wz so far',`${fmt(batchWz())} kg, ${S.batch.crates.length} crates`]])+`<div class="sp-sec">Devices</div>`+ids(['TF01-U-WWB-SCB01','TF01-U-WWB-QRS01','TF01-U-WWB-STL01'])+alarmsFor(['weigh:B'])+`<div class="btns" style="margin-top:12px"><button class="btn" data-go="withered">Open withered weigh</button></div>`;
+    if(k==='D')return spHead('Weigh point D','Drier output')+rd([['Last container, net',S.lastD?`${fmt(S.lastD.net)} kg`:'–'],['Limit',`${set.dMax} kg`],['Assigned batch',S.ferm.length?S.ferm[0].id:'None']])+`<div class="sp-sec">Devices</div>`+ids(['TF01-L-DRO-SCB01','TF01-L-DRO-STL01'])+alarmsFor(['weigh:D'])+`<div class="btns" style="margin-top:12px"><button class="btn" data-go="drier">Open drier</button></div>`;
+    const n=+k.slice(1),seq=[batchWz(),...S.batch.W],v=seq[n],prev=seq[n-1];
+    return spHead(`Weigh point ${k}`,`After rolling stage ${n}`)+rd([['Batch',S.batch.id],[k,v==null?'Not weighed':`${fmt(v)} kg`],[`Dhool ${n} (calculated)`,v!=null&&prev!=null?`${fmt(prev-v)} kg`:'–'],['Bulk stage',`W${S.batch.bulk}`]])+`<div class="sp-sec">Devices</div>`+ids([`TF01-L-RW${n}-SCB01`])+alarmsFor([`weigh:${k}`])+`<div class="btns" style="margin-top:12px"><button class="btn" data-go="rolling">Open rolling</button></div>`;}
+  if(type==='ferm'){const mx=Math.max(...tele.ferSurf);
+    return spHead('Fermentation','Fermentation area')+rd([...tele.ferRoom.map((x,i)=>[`Room probe ${i+1}`,`${fmt(x.t)} °C, ${fmt(x.rh)}%`]),['Hottest spot',`${fmt(mx)} °C (limit ${set.ferMaxSurf})`],['Batches fermenting',S.ferm.map(f=>`${f.id} ${fmt((simNow()-f.start)/60e3,0)} min`).join(', ')||'None']])
+      +`<div class="sp-sec">Hottest surface, last 2 hours</div>`+spark(tele.hist.ferMax,'#D49A6A')+`<div class="sp-sec">Devices</div>`+ids(['TF01-L-FER-THH01','TF01-L-FER-THH02','TF01-L-FER-THH03',...[1,2,3,4,5,6,7,8].map(i=>`TF01-L-FER-IRS0${i}`),'TF01-L-FER-NOD01','TF01-L-FER-NOD02'])+alarmsFor(['ferm'])
+      +`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="ferment">Open fermentation</button></div>`;}
+  if(type==='drier'){const d=tele.dry,l=a=>a[a.length-1];
+    return spHead('Drier','Wood-fired drier')+rd([['Inlet',`${fmt(l(d.in))} °C`],['Outlet',`${fmt(l(d.out))} °C`],['Exhaust',`${fmt(l(d.ex))} °C`],['Inlet minus exhaust',`${fmt(l(d.in)-l(d.ex))} °C`],['Inlet band',`${set.dryInMin}–${set.dryInMax} °C`]])
+      +`<div class="sp-sec">Inlet, last hour</div>`+spark(d.in,'#E08A5A')+`<div class="sp-sec">Exhaust, last hour</div>`+spark(d.ex,'#9AA7AE')+`<div class="sp-sec">Devices</div>`+ids(['TF01-L-DRY-TCK01','TF01-L-DRY-TCK02','TF01-L-DRY-TCK03','TF01-L-DRY-TCM01','TF01-L-DRY-CTS01','TF01-L-DRY-NOD01'])+alarmsFor(['drier'])
+      +`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="drier">Open drier</button></div>`;}
+  if(type==='env')return spHead('Outside air','Ambient')+rd([['Temperature',`${fmt(tele.amb.t)} °C`],['Humidity',`${fmt(tele.amb.rh)}%`],['Node status',envNode.status==='off'?'<span style="color:var(--alarm)">Offline</span>':'Online']])+`<div class="sp-sec">Devices</div>`+ids(['TF01-G-ENV-THS01','TF01-G-ENV-NOD01'])+alarmsFor(['env'])+`<div class="btns" style="margin-top:12px"><button class="btn ghost" data-go="devices">Open devices</button></div>`;
+  return '';}
+function alStripHTML(){const L=alarms();return `<h2>Active alarms <span class="note">(${L.length})</span></h2>`+(L.length?`<div class="al-row">${L.map(alHTML).join('')}</div>`:`<p class="note">Everything is within limits.</p>`);}
+
+/* ---------- VIEWS ---------- */
+const V={};
+function kpiHTML(){let withering=0,ready=0;S.areas.forEach(tr=>tr.forEach(a=>{if(a.state==='wither'){areaProg(a)>=1?ready++:withering++;}}));
+  const recv=S.recv.reduce((s,r)=>s+r.net,0)+S.cycles.filter(c=>simNow()-c.at<24*H).reduce((s,c)=>s+c.N,0);const L=alarms(),na=L.filter(a=>a.sev==='alarm').length;
+  return `<div class="kpi"><div class="v">${fmt(recv,0)}<span style="font-size:16px"> kg</span></div><div class="l">Green leaf, last 24 h</div></div><div class="kpi"><div class="v">${withering}</div><div class="l">Areas withering</div></div><div class="kpi"><div class="v">${ready}</div><div class="l">Areas ready</div></div><div class="kpi"><div class="v">${fmt(batchWz(),0)}<span style="font-size:16px"> kg</span></div><div class="l">Wz, open batch</div></div><div class="kpi"><div class="v">${S.ferm.length}</div><div class="l">Batches fermenting</div></div><div class="kpi ${na?'bad':''}"><div class="v">${na}</div><div class="l">Alarms, ${L.length-na} warnings</div></div>`;}
+V.overview=()=>{
+  let h=header('Plant mimic','Live view of both floors. Select any machine for details.');
+  h+=`<div class="kpis" id="kpis">${kpiHTML()}</div><div class="ov"><section class="panel mimic"><div class="mimic-head"><div class="seg" role="group" aria-label="Floor">${[['both','Both floors'],['upper','Upper'],['lower','Lower']].map(([k,l])=>`<button data-floor="${k}" aria-pressed="${S.floor===k}">${l}</button>`).join('')}</div>
+  <div class="legend"><span>Withering<span class="ramp"></span>ready</span><span><span class="sw" style="background:var(--run)"></span>Running</span><span><span class="sw" style="background:var(--warn)"></span>Warning</span><span><span class="sw" style="background:var(--alarm)"></span>Alarm</span><span><span class="sw" style="background:var(--sel)"></span>Selected</span></div></div>
+  <div class="floors ${S.floor}"><figure class="floor fl-upper"><figcaption>Upper floor: intake and withering</figcaption>${upperSVG()}</figure><figure class="floor fl-lower"><figcaption>Lower floor: rolling, fermentation, drying</figcaption>${lowerSVG()}</figure></div></section>
+  <aside class="panel side-p ${S.sel?'open':''}" id="side" aria-live="polite">${sideHTML()}</aside>
+  <section class="panel alstrip" id="alstrip">${alStripHTML()}</section></div>`;
+  return h;};
+
+function scaleHTML(k,showLamp){return `<div class="scale"><div><div class="read" id="rd${k}">0.0<small>kg</small></div><div class="state" id="st${k}">Scale empty</div></div>${showLamp?`<div class="tower" aria-label="Stack light"><div class="lamp r" id="lr${k}"></div><div class="lamp a" id="la${k}"></div><div class="lamp g" id="lg${k}"></div></div>`:''}</div>`;}
+function lampState(k,net,max){if(!SC[k].stable||net<=0)return '';if(net>max)return 'r';if(net>max*(1-set.amberPct/100))return 'a';return 'g';}
+function tickScale(k,max,tare){const s=SC[k],rdv=$('#rd'+k);if(!rdv)return;rdv.innerHTML=`${fmt(Math.max(0,s.value))}<small>kg</small>`;
+  $('#st'+k).textContent=s.target===0?'Scale empty':s.stable?'Stable':'Settling';
+  if(max!=null){const L=lampState(k,s.value-tare,max);['r','a','g'].forEach(c=>$('#l'+c+k).classList.toggle('on',L===c));if(L==='r'&&!s.beeped){beep();s.beeped=true;}if(L!=='r')s.beeped=false;}
+  const btn=$('#rec'+k);if(btn)btn.disabled=!(s.stable&&s.target>0);}
+let actx=null;function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.06;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.35);}catch(e){}}
+const msgHTML=()=>S.msg?`<p class="msg ${S.msg[0]}">${S.msg[1]}</p>`:'';
+
+V.receiving=()=>{const f=S.rf||(S.rf={sup:'',t:'',a:'',mat:'',photos:0});
+  let h=header('Receiving, station A','Scan the supplier QR, weigh the sack, then choose the trough area.');
+  h+=`<div class="grid2"><div class="panel">${scaleHTML('A',false)}
+  <div class="row"><label class="f">Supplier<select id="rSup"><option value="">Scan or choose</option>${SUP.map(s=>`<option value="${s[0]}" ${f.sup===s[0]?'selected':''}>${s[0]} ${esc(s[1])}</option>`).join('')}</select></label>
+  <label class="f">Trough<select id="rT"><option value="">Choose</option>${[...Array(11)].map((_,i)=>`<option ${f.t==i+1?'selected':''}>${i+1}</option>`).join('')}</select></label>
+  <label class="f">Area<select id="rA"><option value="">Choose</option>${[...Array(8)].map((_,i)=>{let st='';if(f.t){const a=S.areas[f.t-1][i];st=a.state==='empty'?' (empty)':a.state==='unloaded'?' (unloaded)':` (${a.loads[0].sup})`;}return `<option value="${i+1}" ${f.a==i+1?'selected':''}>${i+1}${st}</option>`;}).join('')}</select></label>
+  <label class="f">Maturity (optional)<select id="rM"><option value="">Not recorded</option>${MAT.map(m=>`<option ${f.mat===m?'selected':''}>${m}</option>`).join('')}</select></label></div>
+  <div class="btns"><button class="btn ghost" id="scanA">Scan supplier QR</button><button class="btn ghost" id="placeA">Place sack</button><button class="btn ghost" id="photoA">Take photo (${f.photos})</button><button class="btn" id="recA" disabled>Record sack</button></div>
+  <p class="note" style="margin-top:10px">Deductions on: ${[set.dedTare?`sack tare ${set.tareKg} kg`:null,set.dedWet?`wet leaf ${set.wetPct}%`:null,set.dedCoarse?'coarse leaf (entered)':null].filter(Boolean).join(', ')||'none'}. Change them in Settings.</p>${msgHTML()}</div>
+  <div class="panel"><h2>Sacks recorded this session</h2>${S.recv.length?`<div class="tbl-wrap"><table><tr><th>Time</th><th>Supplier</th><th class="n">Gross</th><th class="n">Net</th><th>Area</th></tr>${S.recv.slice().reverse().map(r=>`<tr><td>${new Date(r.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</td><td>${r.sup}</td><td class="n">${fmt(r.gross)}</td><td class="n">${fmt(r.net)}</td><td>T${r.t}-A${r.a}</td></tr>`).join('')}</table></div>`:`<p class="note">No sacks yet. Scan a supplier QR and place a sack to start.</p>`}</div></div>`;return h;};
+function bindReceiving(){const f=S.rf;
+  $('#rSup').onchange=e=>{f.sup=e.target.value;};$('#rT').onchange=e=>{f.t=e.target.value;f.a='';render();};$('#rA').onchange=e=>{f.a=e.target.value;};$('#rM').onchange=e=>{f.mat=e.target.value;};
+  $('#scanA').onclick=()=>{f.sup=pick(SUP)[0];S.msg=['good',`Scanned ${f.sup}, ${supName(f.sup)}.`];render();};
+  $('#placeA').onclick=()=>{SC.A.target=r1(rnd(22,46));SC.A.cnt=0;};
+  $('#photoA').onclick=()=>{f.photos++;render();};
+  $('#recA').onclick=()=>{if(!f.sup||!f.t||!f.a){S.msg=['bad','Scan the supplier and choose a trough and area before recording.'];render();return;}
+    const gross=r1(SC.A.value);let net=gross;if(set.dedTare)net-=set.tareKg;if(set.dedWet)net-=gross*set.wetPct/100;net=r1(net);
+    const ar=S.areas[f.t-1][f.a-1];if(ar.state==='unloaded'){ar.loads=[];ar.bw=0;ar.crates=0;ar.state='empty';}
+    const ex=ar.loads.find(l=>l.sup===f.sup);if(ex)ex.kg=r1(ex.kg+net);else ar.loads.push({sup:f.sup,kg:net,mat:f.mat});
+    if(ar.state==='empty'){ar.state='wither';ar.loadedAt=simNow();}
+    S.recv.push({at:simNow(),sup:f.sup,gross,net,t:f.t,a:f.a});S.lastA={net,at:simNow()};
+    S.msg=['good',`Recorded ${fmt(net)} kg net for ${f.sup} in T${f.t}-A${f.a}${ar.loads.length>1?' (area now holds '+ar.loads.length+' suppliers)':''}.`];SC.A.target=0;render();};}
+
+V.withered=()=>{const f=S.bf||(S.bf={t:'',a:''});
+  let h=header('Withered weigh, station B',`Max crate weight ${set.bMax} kg net. Crates go to open batch ${S.batch.id}.`);
+  const opts=f.t?S.areas[f.t-1].map((a,i)=>a.state==='wither'?`<option value="${i+1}" ${f.a==i+1?'selected':''}>${i+1}: ${a.loads.map(l=>l.sup).join(' + ')}, ${fmt((simNow()-a.loadedAt)/H)} h</option>`:'').join(''):'';
+  let cur='';if(f.t&&f.a){const a=S.areas[f.t-1][f.a-1];cur=`<p class="note">T${f.t}-A${f.a}: ${fmt(areaN(a))} kg received, ${fmt(a.bw)} kg weighed so far in ${a.crates} crates.</p>`;}
+  h+=`<div class="grid2"><div class="panel">${scaleHTML('B',true)}
+  <div class="row"><label class="f">Trough<select id="bT"><option value="">Choose</option>${[...Array(11)].map((_,i)=>`<option ${f.t==i+1?'selected':''}>${i+1}</option>`).join('')}</select></label>
+  <label class="f">Area being unloaded<select id="bA"><option value="">Choose</option>${opts}</select></label></div>${cur}
+  <div class="btns"><button class="btn ghost" id="placeB">Place crate</button><button class="btn" id="recB" disabled>Record crate</button><button class="btn ghost" id="closeB" ${f.t&&f.a?'':'disabled'}>Area finished</button></div>
+  <p class="note" style="margin-top:10px">Crate tare ${set.crateTare} kg is deducted. Amber from ${fmt(set.bMax*(1-set.amberPct/100))} kg, red above ${set.bMax} kg.</p>${msgHTML()}</div>
+  <div class="panel"><h2>Crates in ${S.batch.id}</h2><p class="note">Wz so far: <b>${fmt(batchWz())} kg</b> from ${S.batch.crates.length} crates.</p><ul class="log">${S.batch.crates.slice().reverse().map(c=>`<li>T${c.t}-A${c.a}: ${fmt(c.net)} kg</li>`).join('')}</ul></div></div>`;return h;};
+function bindWithered(){const f=S.bf;
+  $('#bT').onchange=e=>{f.t=e.target.value;f.a='';render();};$('#bA').onchange=e=>{f.a=e.target.value;render();};
+  $('#placeB').onclick=()=>{SC.B.target=r1(rnd(19,28.5)+set.crateTare);SC.B.cnt=0;};
+  $('#recB').onclick=()=>{if(!f.t||!f.a){S.msg=['bad','Choose the trough and area before weighing.'];render();return;}
+    const net=r1(SC.B.value-set.crateTare);if(net>set.bMax){beep();S.msg=['bad',`${fmt(net)} kg is over the ${set.bMax} kg limit. Take some leaf out and weigh the crate again.`];render();return;}
+    const a=S.areas[f.t-1][f.a-1];a.bw=r1(a.bw+net);a.crates++;S.batch.crates.push({t:+f.t,a:+f.a,net,at:simNow()});S.lastB={net,at:simNow()};
+    S.msg=['good',`Crate recorded: ${fmt(net)} kg from T${f.t}-A${f.a}.`];SC.B.target=0;render();};
+  $('#closeB').onclick=()=>{const a=S.areas[f.t-1][f.a-1];if(!a.crates){S.msg=['bad','No crates weighed for this area yet.'];render();return;}
+    const N=areaN(a);a.state='unloaded';S.batch.N+=N;S.cycles.push({t:+f.t,a:+f.a,loads:a.loads.slice(),N,bw:a.bw,at:simNow()});
+    S.msg=['good',`T${f.t}-A${f.a} closed. Moisture loss ${fmt((N-a.bw)/N*100)}%.`];f.a='';render();};}
+
+V.rolling=()=>{const b=S.batch,Wz=batchWz(),W=b.W;const seq=[Wz,...W];
+  let h=header('Rolling and sieving',`Batch ${b.id}. Weigh what continues after each sieving; dhool is calculated.`);
+  h+=`<div class="panel"><div class="stages"><div class="stage"><label class="f">Wz, from station B<input type="text" value="${fmt(Wz)} kg" readonly></label><div class="ws">${b.crates.length} crates</div></div>`;
+  for(let i=1;i<=4;i++){const prev=seq[i-1],v=seq[i];const ws=(prev!=null&&v!=null)?prev-v:null;const bad=ws!=null&&ws<0;
+    h+=`<div class="stage ${bad?'bad':''}"><label class="f">W${i} after stage ${i} (kg)<input type="number" step="0.1" min="0" data-w="${i-1}" value="${v??''}" placeholder="Weigh"></label><div class="ws">${ws==null?`Ws${i} not yet calculated`:`Ws${i} = ${fmt(ws)} kg${Wz?`, ${fmt(ws/Wz*100)}%`:''}`}</div></div>`;}
+  h+=`</div><div class="row" style="margin-top:14px"><div class="toggle"><span>Bulk is</span><label class="toggle"><input type="radio" name="bulk" value="3" ${b.bulk===3?'checked':''}> W3</label><label class="toggle"><input type="radio" name="bulk" value="4" ${b.bulk===4?'checked':''}> W4</label></div></div>`;
+  const fr=[];for(let i=1;i<=4;i++){if(seq[i]!=null&&seq[i-1]!=null&&seq[i-1]-seq[i]>0)fr.push([`Ws${i}`,seq[i-1]-seq[i]]);}
+  const bulkV=W[b.bulk-1];if(bulkV!=null)fr.push(['Bulk',bulkV]);
+  const cols=['#3F7A5A','#7E8F55','#B2A068','#8C6F7B','#5C8FA0'];
+  if(fr.length&&Wz){h+=`<div class="bar" role="img" aria-label="Dhool fractions">${fr.map((x,i)=>`<span style="width:${x[1]/Wz*100}%;background:${cols[i%5]}" title="${x[0]} ${fmt(x[1])} kg"></span>`).join('')}</div><div class="legend2">${fr.map((x,i)=>`<span><span class="sw" style="background:${cols[i%5]}"></span>${x[0]} ${fmt(x[1])} kg (${fmt(x[1]/Wz*100)}%)</span>`).join('')}</div>`;}
+  h+=`<div class="btns" style="margin-top:14px"><button class="btn ghost" id="sampleR">Fill example weights</button><button class="btn" id="closeR" ${Wz?'':'disabled'}>Send batch to fermentation</button></div>${msgHTML()}</div>`;
+  h+=`<div class="panel" style="margin-top:16px"><h2>Rollers</h2><div class="tbl-wrap"><table><tr><th>Roller</th><th class="n">Air °C</th><th class="n">RH</th><th class="n">Motor A</th></tr>${RID.map((z,i)=>`<tr><td>TF01-L-${z}</td><td class="n">${fmt(tele.roller[i].t)}</td><td class="n">${fmt(tele.roller[i].rh)}%</td><td class="n">${fmt(tele.roller[i].amp)}</td></tr>`).join('')}</table></div></div>`;return h;};
+function bindRolling(){
+  $$('input[data-w]').forEach(inp=>inp.onchange=e=>{const v=e.target.value===''?null:r1(+e.target.value);S.batch.W[+e.target.dataset.w]=v;S.msg=null;render();});
+  $$('input[name=bulk]').forEach(r=>r.onchange=e=>{S.batch.bulk=+e.target.value;render();});
+  $('#sampleR').onclick=()=>{let w=batchWz();S.batch.W=[0,1,2,3].map(()=>{w=r1(w*rnd(.72,.82));return w;});render();};
+  $('#closeR').onclick=()=>{const b=S.batch;if(b.W[b.bulk-1]==null){S.msg=['bad',`Enter W${b.bulk} before sending the batch, because it is marked as bulk.`];render();return;}
+    S.ferm.push({id:b.id,start:simNow(),Wz:batchWz(),N:b.N,D:0});S.batch=newBatch();S.msg=['good',`${b.id} is in fermentation. New batch ${S.batch.id} opened.`];render();};}
+
+V.ferment=()=>header('Fermentation','Room conditions and leaf surface temperature at 8 fixed spots.')+`<div class="grid2"><div class="panel"><h2>Leaf surface, IRS01 to IRS08</h2><div class="ferm" id="ferm">${fermHTML()}</div><p class="note" style="margin-top:10px">Limit ${set.ferMaxSurf} °C. Change it in Settings.</p></div><div class="panel"><h2>Room</h2><div class="tbl-wrap"><table id="froom">${froomHTML()}</table></div><h2 style="margin-top:16px">Batches fermenting</h2><ul class="log" id="flist">${fListHTML()}</ul></div></div>`;
+function fermHTML(){return tele.ferSurf.map((v,i)=>`<div class="spot ${v>set.ferMaxSurf?'hot':''}" style="background:${heatColor(v)}"><div class="t">${fmt(v)}°</div><div class="i">IRS0${i+1}</div></div>`).join('');}
+function froomHTML(){return `<tr><th>Probe</th><th class="n">°C</th><th class="n">RH</th></tr>`+tele.ferRoom.map((x,i)=>`<tr><td>TF01-L-FER-THH0${i+1}</td><td class="n">${fmt(x.t)}</td><td class="n" style="${x.rh<set.ferMinRH?'color:var(--warn);font-weight:700':''}">${fmt(x.rh)}%</td></tr>`).join('');}
+function fListHTML(){return S.ferm.length?S.ferm.map(f=>{const m=(simNow()-f.start)/60e3;return `<li>${f.id}: ${fmt(m,0)} of 150 min${m>150?' <b style="color:var(--warn)">over time</b>':''}, Wz ${fmt(f.Wz,0)} kg</li>`;}).join(''):'<li class="note">No batches fermenting.</li>';}
+
+V.drier=()=>{const fb=S.ferm.length?S.ferm[0]:null;
+  return header('Drier',`Weigh made tea at D. Max ${set.dMax} kg per container.`)+`<div class="grid2"><div class="panel"><h2>Temperatures</h2><div id="gauges">${gaugesHTML()}</div><p class="note">Inlet band ${set.dryInMin}–${set.dryInMax} °C. Each trace shows the last hour.</p></div>
+  <div class="panel">${scaleHTML('D',true)}<p class="note">Assigned by time window to: <b>${fb?fb.id:'no batch'}</b>.</p>
+  <div class="btns"><button class="btn ghost" id="placeD">Place container</button><button class="btn" id="recD" disabled>Record made tea</button><button class="btn ghost" id="finD" ${fb?'':'disabled'}>Batch finished</button></div>${msgHTML()}
+  <h2 style="margin-top:16px">Completed batches</h2><div class="tbl-wrap"><table><tr><th>Batch</th><th class="n">Green leaf</th><th class="n">Made tea</th><th class="n">Out-turn</th></tr>${S.batches.slice().reverse().map(b=>`<tr><td>${b.id}</td><td class="n">${fmt(b.N,0)}</td><td class="n">${fmt(b.D)}</td><td class="n">${fmt(b.D/b.N*100)}%</td></tr>`).join('')}</table></div></div></div>`;};
+function gaugesHTML(){const d=tele.dry,L=a=>a[a.length-1];const din=L(d.in),bad=din<set.dryInMin||din>set.dryInMax;
+  return [['Inlet','TCK01',d.in,bad?'var(--alarm)':'#E08A5A'],['Outlet','TCK02',d.out,'#C9A36A'],['Exhaust','TCK03',d.ex,'#9AA7AE']].map(([n,id,a,c])=>`<div class="gauge"><div><b>${n}</b><div class="note">${id}</div></div>${spark(a,c)}<div class="v" style="color:${c}">${fmt(L(a))}°</div></div>`).join('')+`<p class="note">Inlet minus exhaust: ${fmt(din-L(d.ex))} °C.</p>`;}
+function bindDrier(){
+  $('#placeD').onclick=()=>{SC.D.target=r1(rnd(24,33.5)+0.8);SC.D.cnt=0;};
+  $('#recD').onclick=()=>{const fb=S.ferm[0];if(!fb){S.msg=['bad','No batch to assign this weight to.'];render();return;}
+    const net=r1(SC.D.value-0.8);if(net>set.dMax){beep();S.msg=['bad',`${fmt(net)} kg is over the ${set.dMax} kg limit. Split the container and weigh again.`];render();return;}
+    fb.D=r1(fb.D+net);S.lastD={net,at:simNow()};S.msg=['good',`${fmt(net)} kg made tea recorded for ${fb.id}, ${fmt(fb.D)} kg so far.`];SC.D.target=0;render();};
+  $('#finD').onclick=()=>{const fb=S.ferm.shift();if(!fb.D)fb.D=r1(fb.N*rnd(.2,.23));S.batches.push({id:fb.id,N:fb.N,D:fb.D,Wz:fb.Wz});S.msg=['good',`${fb.id} finished. Out-turn ${fmt(fb.D/fb.N*100)}%.`];render();};}
+
+V.suppliers=()=>{const agg={};S.cycles.forEach(c=>{const tot=c.loads.reduce((s,l)=>s+l.kg,0);c.loads.forEach(l=>{const g=agg[l.sup]||(agg[l.sup]={N:0,bw:0,n:0,mixed:false});const share=l.kg/tot;g.N+=l.kg;g.bw+=c.bw*share;g.n++;if(c.loads.length>1)g.mixed=true;});});
+  const rows=Object.entries(agg).sort((a,b)=>(b[1].N-b[1].bw)/b[1].N-(a[1].N-a[1].bw)/a[1].N);
+  const avgOut=S.batches.reduce((s,b)=>s+b.D,0)/S.batches.reduce((s,b)=>s+b.N,0);
+  return header('Supplier moisture loss','From received weight at A and withered weight at B, per completed area.')+`<div class="panel"><div class="tbl-wrap"><table><tr><th>Supplier</th><th>Name</th><th class="n">Areas</th><th class="n">Received kg</th><th class="n">Withered kg</th><th class="n">Moisture loss</th><th class="n">Est. made tea kg</th></tr>${rows.map(([id,g])=>`<tr><td>${id}</td><td>${esc(supName(id))}</td><td class="n">${g.n}</td><td class="n">${fmt(g.N,0)}</td><td class="n">${fmt(g.bw,0)}</td><td class="n"><b>${fmt((g.N-g.bw)/g.N*100)}%</b>${g.mixed?' *':''}</td><td class="n">${fmt(g.N*avgOut,0)}</td></tr>`).join('')}</table></div>
+  <p class="note">* Includes areas shared with another supplier, split by received weight, so these figures are estimates. Made tea is estimated at the average out-turn of ${fmt(avgOut*100)}%.</p></div>`;};
+V.alarms=()=>{const L=alarms();return header('Alarms',L.length?`${L.length} active`:'No active alarms')+`<div class="panel">${L.length?L.map(alHTML).join(''):'<p class="note">Everything is within limits.</p>'}<p class="note">Select an alarm to see the machine on the plant mimic.</p></div>`;};
+V.devices=()=>header('Devices',`${DEV.length} wireless devices. Health messages every 60 s.`)+`<div class="panel"><div class="tbl-wrap"><table><tr><th>Device ID</th><th>Role</th><th>Status</th><th class="n">Wi-Fi dBm</th><th>Last report</th></tr>${DEV.map(d=>{const ago=Math.round((Date.now()-d.last)*SIM/60e3);return `<tr><td>${d.id}</td><td>${d.d}</td><td><span class="dot ${d.status}"></span>${d.status==='on'?'Online':'Offline'}</td><td class="n">${d.status==='on'?d.rssi:'–'}</td><td>${ago<1?'Just now':ago+' min ago'}</td></tr>`;}).join('')}</table></div></div>`;
+V.settings=()=>{const num=(k,l,step=0.1)=>`<label class="f">${l}<input type="number" step="${step}" data-k="${k}" value="${set[k]}"></label>`;const chk=(k,l)=>`<label class="toggle"><input type="checkbox" data-k="${k}" ${set[k]?'checked':''}> ${l}</label>`;
+  return header('Settings','Limits are sent to the scale bridges through their device shadows.')+`<div class="grid2"><div class="panel"><h2>Weighing limits</h2><div class="row">${num('bMax','Max crate at B, kg')}${num('dMax','Max container at D, kg')}${num('amberPct','Amber warning, % below max',1)}${num('crateTare','Crate tare at B, kg')}</div>
+  <h2>Receiving deductions (A)</h2>${chk('dedTare','Sack tare')}<div class="row">${num('tareKg','Sack tare, kg')}</div>${chk('dedWet','Wet-leaf allowance')}<div class="row">${num('wetPct','Wet leaf, %')}</div>${chk('dedCoarse','Coarse leaf deduction (entered per sack)')}</div>
+  <div class="panel"><h2>Process thresholds</h2><div class="row">${num('witherH','Withering time, h',0.5)}${num('ferMaxSurf','Fermentation surface max, °C',0.5)}${num('ferMinRH','Fermentation RH min, %',1)}${num('dryInMin','Drier inlet min, °C',1)}${num('dryInMax','Drier inlet max, °C',1)}</div>
+  <div class="btns"><button class="btn" id="saveS">Save settings</button><button class="btn ghost" id="resetS">Restore defaults</button></div>${msgHTML()}
+  <p class="note" style="margin-top:12px">Settings are kept in this browser for this prototype. In the real system every change goes to the audit log.</p></div></div>`;};
+function bindSettings(){
+  $('#saveS').onclick=()=>{$$('[data-k]').forEach(i=>{set[i.dataset.k]=i.type==='checkbox'?i.checked:+i.value;});saveSet();S.msg=['good','Settings saved.'];render();};
+  $('#resetS').onclick=()=>{set=Object.assign({},DEF);saveSet();S.msg=['good','Defaults restored.'];render();};}
+
+/* events on main */
+$('#main').addEventListener('click',e=>{
+  const fl=e.target.closest('[data-floor]');if(fl){S.floor=fl.dataset.floor;render();return;}
+  const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return;}
+  if(e.target.closest('[data-close]')){S.sel=null;refreshSide();return;}
+  if(e.target.closest('#hdrAl')){go('alarms');return;}
+  const sg=e.target.closest('[data-sel-go]');if(sg){const t=sg.dataset.selGo;
+    if(['withering','devices'].includes(t)){S.sel=null;if(t==='devices')go('devices');else{S.view='overview';render();}return;}
+    S.sel=t;if(S.view!=='overview'){S.view='overview';render();}else refreshSide();
+    const el=$(`[data-sel="${t}"]`);if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return;}
+  const s=e.target.closest('[data-sel]');if(s){S.sel=s.dataset.sel;refreshSide();}
+});
+function refreshSide(){const sp=$('#side');if(!sp)return;sp.innerHTML=sideHTML();sp.classList.toggle('open',!!S.sel);markSel();}
+
+/* render & tick */
+function render(){renderNav();$('#main').innerHTML=V[S.view]();
+  ({receiving:bindReceiving,withered:bindWithered,rolling:bindRolling,drier:bindDrier,settings:bindSettings}[S.view]||(()=>{}))();
+  if(S.view==='overview')updMimic();fastTick();}
+function fastTick(){stepScales();
+  if(S.view==='receiving')tickScale('A');
+  if(S.view==='withered')tickScale('B',set.bMax,set.crateTare);
+  if(S.view==='drier')tickScale('D',set.dMax,0.8);}
+function slowTick(){stepTele();DEV.forEach(d=>{if(d.status==='on'){d.last=Date.now();d.rssi=Math.round(drift(d.rssi,-78,-45,1.5));}});
+  renderNav();const c=$('#clock');if(c)c.textContent=clockTxt();
+  if(S.view==='overview'){updMimic();$('#kpis').innerHTML=kpiHTML();$('#side').innerHTML=sideHTML();$('#alstrip').innerHTML=alStripHTML();
+    const L=alarms(),na=L.filter(a=>a.sev==='alarm').length,hb=$('#hdrAl');if(hb){hb.className='pill '+(na?'alarm':'');hb.innerHTML=na?`<span class="dot off"></span>${na} alarm${na>1?'s':''}`:'No alarms';}}
+  if(S.view==='ferment'){$('#ferm').innerHTML=fermHTML();$('#froom').innerHTML=froomHTML();$('#flist').innerHTML=fListHTML();}
+  if(S.view==='drier')$('#gauges').innerHTML=gaugesHTML();
+  if(S.view==='devices'||S.view==='alarms')render();}
+render();
+setInterval(fastTick,300);
+setInterval(slowTick,3000);
+})();
+</script>
+</body>
+</html>

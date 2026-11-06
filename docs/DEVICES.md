@@ -22,6 +22,7 @@
 | IR surface sensors (IRS) | 8 |
 | Thermocouples (TCK) + module (TCM) | 3 + 1 |
 | Current sensors (CTS) | 21 (11 fans, 9 rollers, 1 drier) |
+| **Measuring sensors in total** | **78** (the TCM module is counted as a module, not a sensor) |
 
 ## Scale bridges
 

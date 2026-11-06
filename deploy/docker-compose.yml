@@ -1,0 +1,131 @@
+# TF01 stack. Same file on the laptop and on the VPS; only .env differs.
+#
+#   cd deploy && cp .env.example .env && docker compose up -d --build
+#   with simulated devices:   docker compose --profile sim up -d --build
+#   with Grafana:             docker compose --profile grafana up -d
+#
+# Dashboard:      http://localhost:${HTTP_PORT:-8080}
+# EMQX dashboard: http://localhost:18083
+name: tf01
+
+services:
+  mqtt:
+    image: emqx/emqx:5.8.3
+    restart: unless-stopped
+    environment:
+      EMQX_NODE__COOKIE: ${EMQX_COOKIE:-tf01-single-node}
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD_PASSWORD:?set in .env}
+      # Laptop dev: no MQTT authentication (stage 5 adds per-device
+      # credentials, ACLs and TLS on 8883).
+      EMQX_AUTHORIZATION__NO_MATCH: allow
+      EMQX_MQTT__MAX_PACKET_SIZE: 1MB
+    ports:
+      - "${MQTT_BIND:-127.0.0.1}:1883:1883"
+      - "127.0.0.1:18083:18083"
+    volumes:
+      - emqx-data:/opt/emqx/data
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  db:
+    image: timescale/timescaledb:2.17.2-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tf01
+      POSTGRES_USER: tf01
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set in .env}
+      TZ: UTC
+    command: ["postgres", "-c", "timezone=UTC", "-c", "timescaledb.telemetry_level=off"]
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Runs once, on an empty volume, in file-name order.
+      - ../db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tf01 -d tf01"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      mqtt: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql://tf01:${DB_PASSWORD}@db:5432/tf01
+      MQTT_HOST: mqtt
+      MQTT_PORT: 1883
+      MQTT_USERNAME: tf01-backend
+      SITE_PREFIX: tf01
+      AUTH_SECRET: ${AUTH_SECRET:?set in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set in .env}
+      OFFLINE_CHECK_S: ${OFFLINE_CHECK_S:-15}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Only used by the test suite (it builds a scratch database from these).
+      - ../db:/db:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  proxy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../dashboard:/srv/dashboard:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+  simulator:
+    build: ../simulator
+    profiles: ["sim"]
+    restart: unless-stopped
+    depends_on:
+      mqtt: { condition: service_healthy }
+      backend: { condition: service_healthy }
+    environment:
+      MQTT_HOST: mqtt
+      MQTT_PORT: 1883
+      SITE_PREFIX: tf01
+      SIM_SPEED: ${SIM_SPEED:-60}
+      SIM_FAULTS: ${SIM_FAULTS:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+  grafana:
+    image: grafana/grafana-oss:11.3.1
+    profiles: ["grafana"]
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  emqx-data:
+  db-data:
+  caddy-data:
+  caddy-config:
+  grafana-data:
